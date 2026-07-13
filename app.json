@@ -1,17 +1,27 @@
 {
   "expo": {
     "name": "Momento",
-    "slug": "Momento",
+    "slug": "momento",
+    "scheme": "momento",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "statusBar": {
+      "style": "light",
+      "translucent": true,
+      "backgroundColor": "transparent"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.trongvinhsteam.momento",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0a0a0c",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +30,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c5f2a937-746e-4722-9c53-3791b1b1fb17"
+      }
+    },
+    "owner": "trongvinhs-team",
+    "plugins": [
+      "expo-asset",
+      "expo-font",
+      "expo-router"
+    ]
   }
 }
