@@ -92,6 +92,7 @@ export const en: Record<string, string> = {
   createDestBtn: 'Create',
   saveDestBtn: 'Save',
   deleteDestBtn: 'Delete',
+  updateDestBtn: 'Update',
   deleteDestConfirm: 'Deleting this destination will also delete all of its moments. Are you sure?',
 
   // Create / Edit Moment

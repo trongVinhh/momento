@@ -186,16 +186,22 @@ export default function CreateDestinationScreen() {
             {/* Description */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textActive }]}>{t('descriptionLabel')}</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
-                <FileText size={16} color={colors.textMuted} style={styles.icon} />
-                <TextInput
-                  placeholder={t('descriptionPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  value={description}
-                  onChangeText={setDescription}
-                  style={[styles.input, { color: colors.textActive }]}
-                />
-              </View>
+              <TextInput
+                placeholder={t('descriptionPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                numberOfLines={4}
+                value={description}
+                onChangeText={setDescription}
+                style={[
+                  styles.textArea,
+                  { 
+                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
+                    borderColor: colors.borderGlass,
+                    color: colors.textActive
+                  }
+                ]}
+              />
             </View>
 
             {/* Submit Button */}
@@ -427,5 +433,17 @@ const styles = StyleSheet.create({
   modalItemTextActive: {
     color: '#3b82f6',
     fontWeight: '600',
+  },
+  textArea: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'System',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    textAlignVertical: 'top',
+    minHeight: 120,
   },
 })

@@ -99,6 +99,29 @@ const photoMarkerStyles = StyleSheet.create({
   selectedTail: { borderTopColor: '#ef4444' },
 })
 
+// Memoized marker component to completely avoid parent re-renders causing marker flicker
+const MemoizedMarker = React.memo(
+  ({ dest, onPress }: { dest: DestinationRow; onPress: () => void }) => {
+    return (
+      <Marker
+        coordinate={{ latitude: dest.latitude!, longitude: dest.longitude! }}
+        tracksViewChanges={false}
+        onPress={onPress}
+      >
+        <PhotoMarker imageUrl={dest.image_url || ''} selected={false} />
+      </Marker>
+    )
+  },
+  (prev, next) => {
+    return (
+      prev.dest.id === next.dest.id &&
+      prev.dest.image_url === next.dest.image_url &&
+      prev.dest.latitude === next.dest.latitude &&
+      prev.dest.longitude === next.dest.longitude
+    )
+  }
+)
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function MapTab() {
@@ -114,7 +137,7 @@ export default function MapTab() {
 
   const validDestinations = useMemo(() =>
     destinations.filter(d => typeof d.latitude === 'number' && typeof d.longitude === 'number')
-  , [destinations])
+    , [destinations])
 
   const initialRegion = {
     latitude: 21.028511,
@@ -219,18 +242,27 @@ export default function MapTab() {
           showsMyLocationButton={false}
         >
           {validDestinations.map((dest) => (
-            <Marker
+            <MemoizedMarker
               key={dest.id}
-              coordinate={{ latitude: dest.latitude!, longitude: dest.longitude! }}
-              tracksViewChanges={false}
+              dest={dest}
               onPress={() => showSheet(dest)}
+            />
+          ))}
+
+          {/* Active Highlighted Marker on top */}
+          {selectedDest && (
+            <Marker
+              key={`selected-${selectedDest.id}`}
+              coordinate={{ latitude: selectedDest.latitude!, longitude: selectedDest.longitude! }}
+              zIndex={999}
+              tracksViewChanges={true}
             >
               <PhotoMarker
-                imageUrl={dest.image_url || ''}
-                selected={selectedDest?.id === dest.id}
+                imageUrl={selectedDest.image_url || ''}
+                selected={true}
               />
             </Marker>
-          ))}
+          )}
         </MapView>
       )}
 
@@ -307,7 +339,7 @@ export default function MapTab() {
 
                 <View style={styles.sheetFooter}>
                   <View style={[styles.momentsBadge, { backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)' }]}>
-                    <Text style={[styles.momentsBadgeText, { color: '#ef4444' }]}>
+                    <Text style={[styles.momentsBadgeText, { color: '#d79d9dff' }]}>
                       {selectedDest.moments_count ?? 0} {locale === 'vi' ? 'khoảnh khắc' : 'moments'}
                     </Text>
                   </View>

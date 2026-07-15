@@ -14,7 +14,7 @@ import {
 import { BlurView } from 'expo-blur'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { Camera, Check, Trash2, ArrowLeft, MapPin, Type, X } from 'lucide-react-native'
+import { Camera, Check, Trash2, ArrowLeft, MapPin, Type, X, Plus } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GLASS_STYLES, COLORS } from '../../constants/theme'
 import { useTheme } from '../../hooks/useTheme'
@@ -102,9 +102,9 @@ export default function EditMomentScreen() {
                 <TouchableOpacity
                   style={[
                     styles.addImageSquare,
-                    { 
+                    {
                       backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: colors.borderGlass 
+                      borderColor: colors.borderGlass
                     }
                   ]}
                   activeOpacity={0.8}
@@ -137,9 +137,9 @@ export default function EditMomentScreen() {
                 <TouchableOpacity
                   style={[
                     styles.imagePlaceholderEmpty,
-                    { 
+                    {
                       backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: colors.borderGlass 
+                      borderColor: colors.borderGlass
                     }
                   ]}
                   activeOpacity={0.8}
@@ -183,30 +183,57 @@ export default function EditMomentScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.destRow}
                 >
-                  {destinations.map((dest) => (
-                    <TouchableOpacity
-                      key={dest.id}
-                      style={[
-                        styles.destPill,
-                        { 
-                          backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
-                          borderColor: colors.borderGlass 
-                        },
-                        selectedDestId === dest.id && [styles.destPillActive, { backgroundColor: colors.accentPrimary, borderColor: colors.accentPrimary }],
-                      ]}
-                      onPress={() => setSelectedDestId(dest.id)}
-                    >
-                      <Text
+                  {/* Inline Create New Pill */}
+                  <TouchableOpacity
+                    style={[
+                      styles.destPill,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0,0,0,0.01)',
+                        borderColor: colors.borderGlass,
+                        borderStyle: 'dashed',
+                        marginRight: 4,
+                      }
+                    ]}
+                    onPress={() => router.push('/create-destination')}
+                  >
+                    <Plus size={13} color={colors.textMuted} style={{ marginRight: 2 }} />
+                    <Text style={[styles.destPillText, { color: colors.textMuted, fontWeight: '500' }]}>
+                      {locale === 'vi' ? 'Thêm mới...' : 'New...'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {destinations.map((dest) => {
+                    const isActive = selectedDestId === dest.id
+                    return (
+                      <TouchableOpacity
+                        key={dest.id}
                         style={[
-                          styles.destPillText,
-                          { color: colors.textInactive },
-                          selectedDestId === dest.id && [styles.destPillTextActive, { color: '#ffffff' }],
+                          styles.destPill,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                            borderColor: colors.borderGlass
+                          },
+                          isActive && {
+                            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(220, 38, 38, 0.1)',
+                            borderColor: colors.accentPrimary,
+                            borderWidth: 1.5,
+                          },
                         ]}
+                        onPress={() => setSelectedDestId(dest.id)}
                       >
-                        {dest.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <MapPin size={12} color={isActive ? colors.accentPrimary : colors.textMuted} style={{ marginRight: 2 }} />
+                        <Text
+                          style={[
+                            styles.destPillText,
+                            { color: colors.textInactive },
+                            isActive && { color: colors.accentPrimary, fontWeight: '700' },
+                          ]}
+                        >
+                          {dest.name}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  })}
                 </ScrollView>
               )}
             </View>
@@ -238,7 +265,7 @@ export default function EditMomentScreen() {
                 onChangeText={setDescription}
                 style={[
                   styles.textArea,
-                  { 
+                  {
                     backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
                     borderColor: colors.borderGlass,
                     color: colors.textActive
@@ -252,7 +279,7 @@ export default function EditMomentScreen() {
               <TouchableOpacity
                 style={[
                   styles.submitBtn,
-                  { 
+                  {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
                     shadowColor: isDark ? '#ffffff' : '#000000',
@@ -272,7 +299,7 @@ export default function EditMomentScreen() {
                   style={StyleSheet.absoluteFillObject}
                 />
                 <View style={[styles.innerHighlight, { borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
-                
+
                 {loading ? (
                   <ActivityIndicator color={colors.textActive} />
                 ) : (
@@ -283,23 +310,7 @@ export default function EditMomentScreen() {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.deleteBtn,
-                  { 
-                    backgroundColor: theme === 'light' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.08)',
-                    borderColor: 'rgba(239, 68, 68, 0.25)'
-                  }
-                ]}
-                activeOpacity={0.8}
-                onPress={handleDeleteMoment}
-                disabled={loading}
-              >
-                <View style={styles.btnContent}>
-                  <Trash2 size={18} color="#ef4444" />
-                  <Text style={styles.deleteBtnText}>{t('deleteMomentBtn')}</Text>
-                </View>
-              </TouchableOpacity>
+
             </View>
           </View>
         </ScrollView>
@@ -455,6 +466,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   destPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

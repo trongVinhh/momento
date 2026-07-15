@@ -87,9 +87,9 @@ export default function CreateMomentScreen() {
                 <TouchableOpacity
                   style={[
                     styles.addImageSquare,
-                    { 
+                    {
                       backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: colors.borderGlass 
+                      borderColor: colors.borderGlass
                     }
                   ]}
                   activeOpacity={0.8}
@@ -122,9 +122,9 @@ export default function CreateMomentScreen() {
                 <TouchableOpacity
                   style={[
                     styles.imagePlaceholderEmpty,
-                    { 
+                    {
                       backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)',
-                      borderColor: colors.borderGlass 
+                      borderColor: colors.borderGlass
                     }
                   ]}
                   activeOpacity={0.8}
@@ -158,19 +158,6 @@ export default function CreateMomentScreen() {
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
                 <Text style={[styles.label, { color: colors.textActive }]}>{t('selectDestLabel')}</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.addDestBtn,
-                    { 
-                      backgroundColor: colors.accentPrimarySubtle,
-                      borderColor: colors.accentPrimaryBorder
-                    }
-                  ]}
-                  onPress={() => router.push('/create-destination')}
-                >
-                  <Plus size={12} color={colors.accentPrimary} />
-                  <Text style={[styles.addDestBtnText, { color: colors.accentPrimary }]}>{locale === 'vi' ? 'Thêm mới' : 'Add new'}</Text>
-                </TouchableOpacity>
               </View>
 
               {loadingDestinations ? (
@@ -194,30 +181,57 @@ export default function CreateMomentScreen() {
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.destRow}
                 >
-                  {destinations.map((dest) => (
-                    <TouchableOpacity
-                      key={dest.id}
-                      style={[
-                        styles.destPill,
-                        { 
-                          backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
-                          borderColor: colors.borderGlass 
-                        },
-                        selectedDestId === dest.id && [styles.destPillActive, { backgroundColor: colors.accentPrimary, borderColor: colors.accentPrimary }],
-                      ]}
-                      onPress={() => setSelectedDestId(dest.id)}
-                    >
-                      <Text
+                  {/* Inline Create New Pill */}
+                  <TouchableOpacity
+                    style={[
+                      styles.destPill,
+                      {
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0,0,0,0.01)',
+                        borderColor: colors.borderGlass,
+                        borderStyle: 'dashed',
+                        marginRight: 4,
+                      }
+                    ]}
+                    onPress={() => router.push('/create-destination')}
+                  >
+                    <Plus size={13} color={colors.textMuted} style={{ marginRight: 2 }} />
+                    <Text style={[styles.destPillText, { color: colors.textMuted, fontWeight: '500' }]}>
+                      {locale === 'vi' ? 'Thêm mới...' : 'New...'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {destinations.map((dest) => {
+                    const isActive = selectedDestId === dest.id
+                    return (
+                      <TouchableOpacity
+                        key={dest.id}
                         style={[
-                          styles.destPillText,
-                          { color: colors.textInactive },
-                          selectedDestId === dest.id && [styles.destPillTextActive, { color: '#ffffff' }],
+                          styles.destPill,
+                          {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                            borderColor: colors.borderGlass
+                          },
+                          isActive && {
+                            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(220, 38, 38, 0.1)',
+                            borderColor: colors.accentPrimary,
+                            borderWidth: 1.5,
+                          },
                         ]}
+                        onPress={() => setSelectedDestId(dest.id)}
                       >
-                        {dest.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <MapPin size={12} color={isActive ? colors.accentPrimary : colors.textMuted} style={{ marginRight: 2 }} />
+                        <Text
+                          style={[
+                            styles.destPillText,
+                            { color: colors.textInactive },
+                            isActive && { color: colors.accentPrimary, fontWeight: '700' },
+                          ]}
+                        >
+                          {dest.name}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  })}
                 </ScrollView>
               )}
             </View>
@@ -249,7 +263,7 @@ export default function CreateMomentScreen() {
                 onChangeText={setDescription}
                 style={[
                   styles.textArea,
-                  { 
+                  {
                     backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
                     borderColor: colors.borderGlass,
                     color: colors.textActive
@@ -262,7 +276,7 @@ export default function CreateMomentScreen() {
             <TouchableOpacity
               style={[
                 styles.submitBtn,
-                { 
+                {
                   backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
                   shadowColor: isDark ? '#ffffff' : '#000000',
@@ -282,7 +296,7 @@ export default function CreateMomentScreen() {
                 style={StyleSheet.absoluteFillObject}
               />
               <View style={[styles.innerHighlight, { borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
-              
+
               {loading ? (
                 <ActivityIndicator color={colors.textActive} />
               ) : (
@@ -491,6 +505,8 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   destPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,

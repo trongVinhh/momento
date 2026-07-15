@@ -99,9 +99,14 @@ export default function EditDestinationScreen() {
               <Image source={{ uri: imageUri }} style={styles.previewImage} />
             ) : (
               <View style={styles.placeholderContent}>
-                <Camera size={32} color={colors.textInactive} />
-                <Text style={[styles.placeholderText, { color: colors.textInactive }]}>
+                <View style={[styles.cameraCircle, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.06)', borderColor: colors.borderGlass }]}>
+                  <Camera size={28} color={colors.textInactive} />
+                </View>
+                <Text style={[styles.placeholderTitle, { color: colors.textInactive }]}>
                   {locale === 'vi' ? 'Chọn ảnh bìa mới' : 'Select new cover image'}
+                </Text>
+                <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
+                  {locale === 'vi' ? 'Tỷ lệ 16:9 được khuyên dùng' : 'Aspect ratio 16:9 recommended'}
                 </Text>
               </View>
             )}
@@ -161,18 +166,18 @@ export default function EditDestinationScreen() {
                   <Text style={[styles.modalTitle, { color: colors.textActive }]}>
                     {locale === 'vi' ? 'Chọn Quốc Gia' : 'Select Country'}
                   </Text>
-                  
+
                   <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                     {POPULAR_COUNTRIES.map((item) => (
                       <TouchableOpacity
                         key={item}
                         style={[
                           styles.modalItem,
-                          { 
+                          {
                             backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.01)' : 'rgba(255, 255, 255, 0.02)',
-                            borderColor: colors.borderGlass 
+                            borderColor: colors.borderGlass
                           },
-                          country === item && [styles.modalItemActive, { backgroundColor: colors.accentPrimarySubtle, borderColor: colors.accentPrimaryBorder }],
+                          country === item && { backgroundColor: colors.accentPrimarySubtle, borderColor: colors.accentPrimaryBorder, borderWidth: 1.5 },
                         ]}
                         onPress={() => {
                           setCountry(item)
@@ -183,7 +188,7 @@ export default function EditDestinationScreen() {
                           style={[
                             styles.modalItemText,
                             { color: colors.textInactive },
-                            country === item && [styles.modalItemTextActive, { color: colors.accentPrimary, fontWeight: '700' }],
+                            country === item && { color: colors.accentPrimary, fontWeight: '700' },
                           ]}
                         >
                           {item}
@@ -198,16 +203,22 @@ export default function EditDestinationScreen() {
             {/* Mô tả */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textActive }]}>{t('descriptionLabel')}</Text>
-              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
-                <FileText size={16} color={colors.textMuted} style={styles.icon} />
-                <TextInput
-                  placeholder={t('descriptionPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  value={description}
-                  onChangeText={setDescription}
-                  style={[styles.input, { color: colors.textActive }]}
-                />
-              </View>
+              <TextInput
+                placeholder={t('descriptionPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                numberOfLines={4}
+                value={description}
+                onChangeText={setDescription}
+                style={[
+                  styles.textArea,
+                  {
+                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
+                    borderColor: colors.borderGlass,
+                    color: colors.textActive
+                  }
+                ]}
+              />
             </View>
 
             {/* Buttons */}
@@ -215,7 +226,7 @@ export default function EditDestinationScreen() {
               <TouchableOpacity
                 style={[
                   styles.submitBtn,
-                  { 
+                  {
                     backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
                     shadowColor: isDark ? '#ffffff' : '#000000',
@@ -235,7 +246,7 @@ export default function EditDestinationScreen() {
                   style={StyleSheet.absoluteFillObject}
                 />
                 <View style={[styles.innerHighlight, { borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
-                
+
                 {loading ? (
                   <ActivityIndicator color={colors.textActive} />
                 ) : (
@@ -246,23 +257,7 @@ export default function EditDestinationScreen() {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  styles.deleteBtn,
-                  { 
-                    backgroundColor: theme === 'light' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.08)',
-                    borderColor: 'rgba(239, 68, 68, 0.25)'
-                  }
-                ]}
-                activeOpacity={0.8}
-                onPress={handleDeleteDestination}
-                disabled={loading}
-              >
-                <View style={styles.btnContent}>
-                  <Trash2 size={18} color="#ef4444" />
-                  <Text style={styles.deleteBtnText}>{t('deleteDestBtn')}</Text>
-                </View>
-              </TouchableOpacity>
+
             </View>
           </View>
         </ScrollView>
@@ -475,5 +470,38 @@ const styles = StyleSheet.create({
   modalItemTextActive: {
     color: '#3b82f6',
     fontWeight: '600',
+  },
+  cameraCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderTitle: {
+    fontFamily: 'System',
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.textInactive,
+  },
+  placeholderSub: {
+    fontFamily: 'System',
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
+  textArea: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'System',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    textAlignVertical: 'top',
+    minHeight: 120,
   },
 })

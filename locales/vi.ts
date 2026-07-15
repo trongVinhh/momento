@@ -91,6 +91,7 @@ export const vi: Record<string, string> = {
   selectCoverImage: 'Chọn ảnh bìa',
   createDestBtn: 'Tạo',
   saveDestBtn: 'Lưu',
+  updateDestBtn: 'Cập nhật',
   deleteDestBtn: 'Xóa',
   deleteDestConfirm: 'Xóa địa điểm này sẽ xóa toàn bộ khoảnh khắc thuộc về nó. Bạn có chắc không?',
 
