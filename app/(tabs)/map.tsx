@@ -12,12 +12,12 @@ import MapView, { Marker, Callout } from 'react-native-maps'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Compass, Pin, Sparkles } from 'lucide-react-native'
+import { Compass, Pin } from 'lucide-react-native'
 import Svg, { Path } from 'react-native-svg'
 
-import { COLORS, GLASS_STYLES } from '../../constants/theme'
-import { globalStyles } from '../../styles/globalStyles'
 import { useDestinations } from '../../hooks/useDestinations'
+import { useTheme } from '../../hooks/useTheme'
+import { globalStyles } from '../../styles/globalStyles'
 
 // Giao diện bản đồ tối (Dark Mode Map Style JSON)
 const DARK_MAP_STYLE = [
@@ -40,6 +40,7 @@ export default function MapTab() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { destinations, loading, error, refetch } = useDestinations()
+  const { colors, theme, isDark } = useTheme()
 
   // 1. Chỉ lấy những địa điểm có tọa độ hợp lệ
   const validDestinations = useMemo(() => {
@@ -55,33 +56,33 @@ export default function MapTab() {
   }
 
   return (
-    <View style={globalStyles.container}>
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
       {/* ── Header ── */}
       <BlurView
-        intensity={Platform.OS === 'android' ? 40 : GLASS_STYLES.headerIntensity}
-        tint={COLORS.tintDark}
-        style={[globalStyles.headerBase, { paddingTop: insets.top + 12, zIndex: 10 }]}
+        intensity={Platform.OS === 'android' ? 40 : 60}
+        tint={colors.blurTint}
+        style={[globalStyles.headerBase, { paddingTop: insets.top + 12, zIndex: 10, borderBottomColor: colors.borderGlass }]}
       >
-        <Text style={globalStyles.headerTitle}>Moment maps</Text>
+        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>Moment maps</Text>
         <TouchableOpacity style={styles.headerButton} onPress={refetch}>
-          <Compass size={22} color={COLORS.textInactive} />
+          <Compass size={22} color={colors.textInactive} />
         </TouchableOpacity>
       </BlurView>
 
       {/* Loading state */}
       {loading && validDestinations.length === 0 && (
-        <View style={styles.centerState}>
-          <ActivityIndicator size="large" color="rgba(255,255,255,0.4)" />
-          <Text style={styles.stateText}>Đang tải bản đồ hành trình...</Text>
+        <View style={[styles.centerState, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+          <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải bản đồ hành trình...</Text>
         </View>
       )}
 
       {/* Error state */}
       {!loading && error && (
-        <View style={styles.centerState}>
-          <Text style={styles.stateText}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
-            <Text style={styles.retryText}>Thử lại</Text>
+        <View style={[styles.centerState, { backgroundColor: colors.background }]}>
+          <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
+          <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
+            <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -91,7 +92,8 @@ export default function MapTab() {
         <MapView
           style={StyleSheet.absoluteFillObject}
           initialRegion={initialRegion}
-          customMapStyle={DARK_MAP_STYLE}
+          // Áp dụng Map Style tối chỉ khi ở Dark Mode
+          customMapStyle={isDark ? DARK_MAP_STYLE : undefined}
           provider={Platform.OS === 'android' ? 'google' : undefined}
           showsUserLocation={false}
           showsCompass={false}
@@ -101,7 +103,7 @@ export default function MapTab() {
             <Marker
               key={dest.id}
               coordinate={{ latitude: dest.latitude!, longitude: dest.longitude! }}
-              tracksViewChanges={false} // Tối ưu hóa hiệu năng render marker
+              tracksViewChanges={false}
             >
               {/* Ghim đỏ custom SVG theo phong cách turkkub */}
               <View style={styles.markerContainer}>
@@ -124,17 +126,27 @@ export default function MapTab() {
                 tooltip
                 onPress={() => router.push(`/destination/${dest.id}`)}
               >
-                <BlurView intensity={25} tint="dark" style={styles.calloutWrapper}>
-                  <View style={styles.calloutInnerBorder} />
+                <BlurView 
+                  intensity={25} 
+                  tint={colors.blurTint} 
+                  style={[
+                    styles.calloutWrapper, 
+                    { 
+                      backgroundColor: isDark ? 'rgba(20, 20, 25, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                      borderColor: colors.borderGlass 
+                    }
+                  ]}
+                >
+                  <View style={[styles.calloutInnerBorder, { borderColor: colors.borderGlass }]} />
                   <Image source={{ uri: dest.image_url }} style={styles.calloutImage} />
-
+                  
                   <View style={styles.calloutContent}>
-                    <Text style={styles.calloutTitle}>{dest.name}</Text>
-                    <Text style={styles.calloutCountry}>{dest.country || 'Việt Nam'}</Text>
-
+                    <Text style={[styles.calloutTitle, { color: colors.textActive }]}>{dest.name}</Text>
+                    <Text style={[styles.calloutCountry, { color: colors.textMuted }]}>{dest.country || 'Việt Nam'}</Text>
+                    
                     <View style={styles.calloutStats}>
                       <Pin size={11} color="#ef4444" />
-                      <Text style={styles.calloutMomentsText}>
+                      <Text style={[styles.calloutMomentsText, { color: colors.textSubtle }]}>
                         {dest.moments_count ?? 0} khoảnh khắc
                       </Text>
                     </View>
@@ -155,7 +167,6 @@ const styles = StyleSheet.create({
   },
   centerState: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0a0a0c',
     zIndex: 9,
     justifyContent: 'center',
     alignItems: 'center',
@@ -164,43 +175,33 @@ const styles = StyleSheet.create({
   stateText: {
     fontFamily: 'System',
     fontSize: 14,
-    color: COLORS.textInactive,
   },
   retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   retryText: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.white,
   },
-
   markerContainer: {
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  // Glassmorphic callout popup styles
   calloutWrapper: {
     width: 190,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    backgroundColor: 'rgba(20, 20, 25, 0.85)',
   },
   calloutInnerBorder: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
     pointerEvents: 'none',
   },
   calloutImage: {
@@ -216,12 +217,10 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.white,
   },
   calloutCountry: {
     fontFamily: 'System',
     fontSize: 10,
-    color: COLORS.textMuted,
   },
   calloutStats: {
     flexDirection: 'row',
@@ -233,6 +232,5 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 10,
     fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.65)',
   },
 })

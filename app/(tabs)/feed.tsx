@@ -14,14 +14,15 @@ import { BlurView } from 'expo-blur'
 import { Heart, MessageCircle, Share2, Compass, FileText } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { COLORS, GLASS_STYLES } from '../../constants/theme'
 import { globalStyles } from '../../styles/globalStyles'
 import { useFeed } from '../../hooks/useFeed'
+import { useTheme } from '../../hooks/useTheme'
 
 export default function FeedTab() {
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 56
   const { feed, loading, error, refetch } = useFeed()
+  const { colors, theme } = useTheme()
   const [refreshing, setRefreshing] = useState(false)
 
   const onRefresh = async () => {
@@ -31,16 +32,16 @@ export default function FeedTab() {
   }
 
   return (
-    <View style={globalStyles.container}>
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
       {/* ── Header ── */}
       <BlurView
-        intensity={Platform.OS === 'android' ? 40 : GLASS_STYLES.headerIntensity}
-        tint={COLORS.tintDark}
-        style={[globalStyles.headerBase, { paddingTop: insets.top + 12 }]}
+        intensity={Platform.OS === 'android' ? 40 : 60}
+        tint={colors.blurTint}
+        style={[globalStyles.headerBase, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass }]}
       >
-        <Text style={globalStyles.headerTitle}>Moments Feed</Text>
+        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>Moments Feed</Text>
         <TouchableOpacity style={styles.headerButton} onPress={() => refetch()}>
-          <Compass size={22} color={COLORS.textInactive} />
+          <Compass size={22} color={colors.textInactive} />
         </TouchableOpacity>
       </BlurView>
 
@@ -56,24 +57,24 @@ export default function FeedTab() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.white}
+            tintColor={colors.textActive}
           />
         }
       >
         {/* Loading State */}
         {loading && !refreshing && feed.length === 0 && (
           <View style={styles.centerState}>
-            <ActivityIndicator size="large" color="rgba(255,255,255,0.4)" />
-            <Text style={styles.stateText}>Đang tải bản tin...</Text>
+            <ActivityIndicator size="large" color={theme === 'light' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)'} />
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải bản tin...</Text>
           </View>
         )}
 
         {/* Error State */}
         {!loading && error && (
           <View style={styles.centerState}>
-            <Text style={styles.stateText}>{error}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
-              <Text style={styles.retryText}>Thử lại</Text>
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
+            <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
+              <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -81,11 +82,11 @@ export default function FeedTab() {
         {/* Empty State */}
         {!loading && !error && feed.length === 0 && (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconBg}>
-              <FileText size={32} color={COLORS.textInactive} />
+            <View style={[styles.emptyIconBg, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}>
+              <FileText size={32} color={colors.textInactive} />
             </View>
-            <Text style={styles.emptyTitle}>Bản tin trống</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Bản tin trống</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
               Chưa có khoảnh khắc nào được đăng tải. Hãy ghi lại hành trình đầu tiên của bạn!
             </Text>
           </View>
@@ -93,17 +94,17 @@ export default function FeedTab() {
 
         {/* Dynamic Feed Posts */}
         {!loading && feed.map((post) => (
-          <View key={post.id} style={styles.postCard}>
+          <View key={post.id} style={[styles.postCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]}>
             {/* Post Header */}
             <View style={styles.postHeader}>
               <Image source={{ uri: post.user.avatarUrl }} style={styles.avatar} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.userName}>{post.user.displayName}</Text>
-                <Text style={styles.locationText} numberOfLines={1}>
+                <Text style={[styles.userName, { color: colors.textActive }]}>{post.user.displayName}</Text>
+                <Text style={[styles.locationText, { color: colors.textInactive }]} numberOfLines={1}>
                   {post.location}{post.destinationName ? `, ${post.destinationName}` : ''}
                 </Text>
               </View>
-              <Text style={styles.timeText}>{post.date}</Text>
+              <Text style={[styles.timeText, { color: colors.textMuted }]}>{post.date}</Text>
             </View>
 
             {/* Post Image */}
@@ -112,24 +113,24 @@ export default function FeedTab() {
             {/* Actions */}
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionButton}>
-                <Heart size={20} color={COLORS.textInactive} />
-                <Text style={styles.actionCount}>{post.likes}</Text>
+                <Heart size={20} color={colors.textInactive} />
+                <Text style={[styles.actionCount, { color: colors.textInactive }]}>{post.likes}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton}>
-                <MessageCircle size={20} color={COLORS.textInactive} />
-                <Text style={styles.actionCount}>0</Text>
+                <MessageCircle size={20} color={colors.textInactive} />
+                <Text style={[styles.actionCount, { color: colors.textInactive }]}>0</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.actionButton, { marginLeft: 'auto' }]}>
-                <Share2 size={20} color={COLORS.textInactive} />
+                <Share2 size={20} color={colors.textInactive} />
               </TouchableOpacity>
             </View>
 
             {/* Title & Caption */}
             <View style={styles.captionContainer}>
-              <Text style={styles.momentTitle}>{post.title}</Text>
+              <Text style={[styles.momentTitle, { color: colors.textActive }]}>{post.title}</Text>
               {post.description ? (
-                <Text style={styles.captionText}>
-                  <Text style={styles.captionUser}>{post.user.displayName} </Text>
+                <Text style={[styles.captionText, { color: colors.textSubtle }]}>
+                  <Text style={[styles.captionUser, { color: colors.textActive }]}>{post.user.displayName} </Text>
                   {post.description}
                 </Text>
               ) : null}
@@ -150,11 +151,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   postCard: {
-    backgroundColor: COLORS.cardBackground,
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   postHeader: {
     flexDirection: 'row',
@@ -166,28 +165,25 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#26262b',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   userName: {
     fontFamily: 'System',
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.white,
   },
   locationText: {
     fontFamily: 'System',
     fontSize: 11,
-    color: COLORS.textInactive,
   },
   timeText: {
     fontFamily: 'System',
     fontSize: 11,
-    color: 'rgba(255,255,255,0.3)',
   },
   postImage: {
     width: '100%',
     height: 300,
-    backgroundColor: '#26262b',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   actionRow: {
     flexDirection: 'row',
@@ -203,7 +199,6 @@ const styles = StyleSheet.create({
   actionCount: {
     fontFamily: 'System',
     fontSize: 12,
-    color: COLORS.textInactive,
   },
   captionContainer: {
     paddingHorizontal: 12,
@@ -214,17 +209,14 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.white,
   },
   captionText: {
     fontFamily: 'System',
     fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
     lineHeight: 18,
   },
   captionUser: {
     fontWeight: '600',
-    color: COLORS.white,
   },
   centerState: {
     alignItems: 'center',
@@ -235,21 +227,17 @@ const styles = StyleSheet.create({
   stateText: {
     fontFamily: 'System',
     fontSize: 14,
-    color: COLORS.textInactive,
   },
   retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
     marginTop: 8,
   },
   retryText: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.white,
   },
   emptyState: {
     alignItems: 'center',
@@ -261,9 +249,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -271,12 +257,10 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.white,
   },
   emptySubtitle: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.textInactive,
     textAlign: 'center',
     lineHeight: 20,
   },

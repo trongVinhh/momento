@@ -12,14 +12,14 @@ import {
 import { StatusBar } from 'expo-status-bar'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Plus, MapPin } from 'lucide-react-native'
+import { Plus, MapPin, ChevronDown } from 'lucide-react-native'
 import { useRouter } from 'expo-router'
 
 import { DestinationCard } from '../../components/travel/DestinationCard'
-import { COLORS, GLASS_STYLES } from '../../constants/theme'
 import { useStaggeredEntrance } from '../../hooks/useStaggeredEntrance'
 import { globalStyles } from '../../styles/globalStyles'
 import { useDestinations } from '../../hooks/useDestinations'
+import { useTheme } from '../../hooks/useTheme'
 
 const MAX_ANIM = 20
 const STAGGER_DELAYS = Array.from({ length: MAX_ANIM }, (_, i) => i * 120 + 150)
@@ -29,8 +29,10 @@ export default function TripsTab() {
   const router = useRouter()
   const { destinations, loading, error, refetch } = useDestinations()
   const animValues = useStaggeredEntrance(MAX_ANIM, STAGGER_DELAYS)
+  const { colors, theme, isDark } = useTheme()
 
   const [selectedCountry, setSelectedCountry] = useState('Tất cả')
+  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   // 1. Trích xuất danh sách Quốc gia duy nhất
   const countries = useMemo(() => {
@@ -44,13 +46,12 @@ export default function TripsTab() {
     return destinations.filter((d) => d.country === selectedCountry)
   }, [destinations, selectedCountry])
 
-  // 3. Tính toán chiều cao của Header động để scroll padding khớp
-  const filterBarHeight = countries.length > 1 ? 52 : 0
-  const headerHeight = insets.top + 56 + filterBarHeight
+  // 3. Chiều cao Header cố định
+  const headerHeight = insets.top + 56
 
   return (
-    <View style={globalStyles.container}>
-      <StatusBar style="light" translucent />
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={theme === 'light' ? 'dark' : 'light'} translucent />
 
       {/* ── Scrollable Content ── */}
       <ScrollView
@@ -64,17 +65,17 @@ export default function TripsTab() {
         {/* Loading */}
         {loading && (
           <View style={styles.centerState}>
-            <ActivityIndicator size="large" color="rgba(255,255,255,0.5)" />
-            <Text style={styles.stateText}>Đang tải địa điểm...</Text>
+            <ActivityIndicator size="large" color={theme === 'light' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'} />
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải địa điểm...</Text>
           </View>
         )}
 
         {/* Error */}
         {!loading && error && (
           <View style={styles.centerState}>
-            <Text style={styles.stateText}>{error}</Text>
-            <TouchableOpacity style={styles.retryBtn} onPress={refetch}>
-              <Text style={styles.retryText}>Thử lại</Text>
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
+            <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
+              <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -82,19 +83,26 @@ export default function TripsTab() {
         {/* Empty State (Khi chưa có địa điểm nào trong database) */}
         {!loading && !error && destinations.length === 0 && (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconBg}>
-              <MapPin size={32} color={COLORS.textInactive} />
+            <View style={[styles.emptyIconBg, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}>
+              <MapPin size={32} color={colors.textInactive} />
             </View>
-            <Text style={styles.emptyTitle}>Chưa có địa điểm nào</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Chưa có địa điểm nào</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
               Bắt đầu hành trình của bạn bằng cách tạo địa điểm đầu tiên!
             </Text>
             <TouchableOpacity
-              style={styles.createFirstBtn}
+              style={[
+                styles.createFirstBtn,
+                { 
+                  backgroundColor: colors.accentPrimaryGlass,
+                  borderColor: colors.borderGlass,
+                  shadowColor: colors.accentPrimary
+                }
+              ]}
               activeOpacity={0.8}
               onPress={() => router.push('/create-destination')}
             >
-              <Plus size={16} color={COLORS.white} />
+              <Plus size={16} color="#ffffff" />
               <Text style={styles.createFirstBtnText}>Tạo địa điểm đầu tiên</Text>
             </TouchableOpacity>
           </View>
@@ -103,11 +111,11 @@ export default function TripsTab() {
         {/* Empty Filter State (Khi có địa điểm nhưng lọc ra trống) */}
         {!loading && !error && destinations.length > 0 && filteredDestinations.length === 0 && (
           <View style={styles.emptyState}>
-            <View style={styles.emptyIconBg}>
-              <MapPin size={32} color={COLORS.textInactive} />
+            <View style={[styles.emptyIconBg, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}>
+              <MapPin size={32} color={colors.textInactive} />
             </View>
-            <Text style={styles.emptyTitle}>Không có địa điểm phù hợp</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Không có địa điểm phù hợp</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
               Bạn chưa tạo hành trình nào ở quốc gia "{selectedCountry}"
             </Text>
           </View>
@@ -126,53 +134,85 @@ export default function TripsTab() {
         ))}
       </ScrollView>
 
-      {/* ── Header + Filter Bar (Kính mờ bao phủ) ── */}
+      {/* ── Header + Filter Dropdown (Kính mờ bao phủ) ── */}
       <BlurView
-        intensity={Platform.OS === 'android' ? 40 : GLASS_STYLES.headerIntensity}
-        tint={COLORS.tintDark}
-        style={[styles.headerContainer, { paddingTop: insets.top + 12 }]}
+        intensity={Platform.OS === 'android' ? 40 : 60}
+        tint={colors.blurTint}
+        style={[styles.headerContainer, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass }]}
       >
         <View style={styles.headerTitleRow}>
-          <Text style={styles.headerTitle}>Trips</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Text style={[styles.headerTitle, { color: colors.textActive }]}>Trips</Text>
+            {!loading && countries.length > 1 && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setDropdownOpen(!dropdownOpen)}
+                style={[
+                  styles.countryDropdownBtn,
+                  { 
+                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.05)',
+                    borderColor: colors.borderGlass
+                  }
+                ]}
+              >
+                <Text style={[styles.countryDropdownText, { color: colors.textSubtle }]}>
+                  {selectedCountry}
+                </Text>
+                <ChevronDown size={14} color={colors.textInactive} />
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Nút thêm địa điểm mới */}
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => router.push('/create-destination')}
-            style={styles.glassRoundBtn}
+            style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}
           >
-            <Plus size={20} color={COLORS.white} />
+            <Plus size={20} color={colors.textActive} />
           </TouchableOpacity>
         </View>
 
-        {/* Dynamic Country Filter Scroll (Chỉ hiện khi có từ 2 quốc gia trở lên bao gồm "Tất cả") */}
-        {!loading && countries.length > 1 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.countryFilterRow}
-            style={styles.countryFilterScroll}
+        {/* Hộp thoại kính mờ chọn quốc gia (Dropdown Overlay) */}
+        {dropdownOpen && !loading && countries.length > 1 && (
+          <View 
+            style={[
+              styles.dropdownList, 
+              { 
+                backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(20, 20, 25, 0.92)',
+                borderColor: colors.borderGlass,
+                shadowColor: isDark ? '#000000' : 'rgba(0,0,0,0.1)'
+              }
+            ]}
           >
-            {countries.map((country) => (
-              <TouchableOpacity
-                key={country}
-                style={[
-                  styles.countryPill,
-                  selectedCountry === country && styles.countryPillActive,
-                ]}
-                onPress={() => setSelectedCountry(country)}
-              >
-                <Text
+            <BlurView intensity={Platform.OS === 'android' ? 20 : 40} tint={colors.blurTint} style={StyleSheet.absoluteFillObject} />
+            <View style={[styles.dropdownInnerBorder, { borderColor: colors.borderGlass }]} />
+            <ScrollView style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
+              {countries.map((country) => (
+                <TouchableOpacity
+                  key={country}
                   style={[
-                    styles.countryPillText,
-                    selectedCountry === country && styles.countryPillTextActive,
+                    styles.dropdownItem,
+                    selectedCountry === country && { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)' }
                   ]}
+                  onPress={() => {
+                    setSelectedCountry(country)
+                    setDropdownOpen(false)
+                  }}
                 >
-                  {country}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text style={[
+                    styles.dropdownItemText,
+                    { 
+                      color: selectedCountry === country ? colors.accentPrimary : colors.textActive,
+                      fontWeight: selectedCountry === country ? '700' : '400'
+                    }
+                  ]}>
+                    {country}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         )}
       </BlurView>
     </View>
@@ -187,7 +227,6 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 99,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -199,50 +238,59 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'System',
     fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.white,
+    fontWeight: '700',
   },
   glassRoundBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countryFilterScroll: {
-    height: 52,
-    maxHeight: 52,
-  },
-  countryFilterRow: {
-    paddingHorizontal: 24,
+  countryDropdownBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    height: '100%',
-  },
-  countryPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  countryPillActive: {
-    backgroundColor: 'rgba(59, 130, 246, 0.75)',
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  countryPillText: {
+  countryDropdownText: {
     fontFamily: 'System',
     fontSize: 12,
-    fontWeight: '500',
-    color: COLORS.textInactive,
   },
-  countryPillTextActive: {
-    color: COLORS.white,
-    fontWeight: '600',
+  dropdownList: {
+    position: 'absolute',
+    top: 56,
+    left: 24,
+    width: 160,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    paddingVertical: 4,
+    zIndex: 9999,
+  },
+  dropdownInnerBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    borderWidth: 1,
+    pointerEvents: 'none',
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginHorizontal: 4,
+    borderRadius: 10,
+  },
+  dropdownItemText: {
+    fontFamily: 'System',
+    fontSize: 13,
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -256,21 +304,17 @@ const styles = StyleSheet.create({
   stateText: {
     fontFamily: 'System',
     fontSize: 14,
-    color: COLORS.textInactive,
     textAlign: 'center',
   },
   retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   retryText: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.white,
   },
   emptyState: {
     alignItems: 'center',
@@ -282,9 +326,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
@@ -293,12 +335,10 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 18,
     fontWeight: '700',
-    color: COLORS.white,
   },
   emptySubtitle: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.textInactive,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -306,14 +346,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(59, 130, 246, 0.75)',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -322,6 +359,6 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.white,
+    color: '#ffffff',
   },
 })

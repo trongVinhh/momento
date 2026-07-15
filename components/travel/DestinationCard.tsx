@@ -64,7 +64,16 @@ export function DestinationCard({
 
         {/* Bottom: large clipped destination name */}
         <View style={styles.nameClipContainer} pointerEvents="none">
-          <Text style={styles.destinationName} numberOfLines={1}>
+          <Text 
+            style={[
+              styles.destinationName,
+              {
+                fontSize: name.length > 15 ? 32 : name.length > 10 ? 46 : name.length > 6 ? 60 : 80,
+                lineHeight: name.length > 15 ? 38 : name.length > 10 ? 54 : name.length > 6 ? 70 : 92
+              }
+            ]} 
+            numberOfLines={1}
+          >
             {name}
           </Text>
         </View>
@@ -114,20 +123,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: 110,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    overflow: 'hidden',
   },
   destinationName: {
     fontFamily: 'System',
-    fontSize: 96,
     fontWeight: '700',
     color: 'rgba(255,255,255,0.55)',
     letterSpacing: -2,
-    lineHeight: 96,
-    marginBottom: -2,
-    includeFontPadding: false,
+    includeFontPadding: true,
     textAlign: 'center',
   },
 })

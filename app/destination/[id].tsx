@@ -13,22 +13,23 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowLeft, MapPin, Calendar, Heart, Plus, Settings, Edit3 } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { COLORS } from '../../constants/theme'
 import { globalStyles } from '../../styles/globalStyles'
 import { useDestinationDetail } from '../../hooks/useDestinationDetail'
+import { useTheme } from '../../hooks/useTheme'
 
 export default function DestinationDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { destination, moments, loading, error } = useDestinationDetail(id)
+  const { colors, theme, isDark } = useTheme()
 
   // Loading State
   if (loading) {
     return (
-      <View style={[globalStyles.container, styles.centerState]}>
-        <ActivityIndicator size="large" color="rgba(255,255,255,0.5)" />
-        <Text style={styles.stateText}>Đang tải...</Text>
+      <View style={[globalStyles.container, styles.centerState, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)'} />
+        <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải...</Text>
       </View>
     )
   }
@@ -36,36 +37,45 @@ export default function DestinationDetail() {
   // Error / Not Found
   if (error || !destination) {
     return (
-      <View style={[globalStyles.container, styles.centerState]}>
-        <Text style={styles.stateText}>{error || 'Không tìm thấy địa điểm.'}</Text>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Quay lại</Text>
+      <View style={[globalStyles.container, styles.centerState, { backgroundColor: colors.background }]}>
+        <Text style={[styles.stateText, { color: colors.textInactive }]}>{error || 'Không tìm thấy địa điểm.'}</Text>
+        <TouchableOpacity 
+          style={[styles.backBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} 
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.backBtnText, { color: colors.textActive }]}>Quay lại</Text>
         </TouchableOpacity>
       </View>
     )
   }
 
   return (
-    <View style={globalStyles.container}>
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
       {/* Parallax Header Image */}
       <View style={styles.imageContainer}>
         <Image source={{ uri: destination.image_url }} style={styles.headerImage} />
         <View style={styles.shadowOverlay} />
       </View>
 
-      {/* Floating Header Actions */}
+      {/* Floating Header Actions (Always on top of cover image, kept white for contrast) */}
       <View style={[styles.headerActions, { top: insets.top + 12 }]}>
         <TouchableOpacity style={styles.glassRoundBtn} onPress={() => router.back()}>
-          <ArrowLeft size={20} color={COLORS.white} />
+          <ArrowLeft size={20} color="#ffffff" />
         </TouchableOpacity>
         
         <View style={styles.rightActions}>
           {/* Nút thêm moment cho destination này */}
           <TouchableOpacity
-            style={styles.addBtn}
+            style={[
+              styles.addBtn,
+              { 
+                backgroundColor: colors.accentPrimaryGlass,
+                shadowColor: colors.accentPrimary
+              }
+            ]}
             onPress={() => router.push('/create')}
           >
-            <Plus size={14} color={COLORS.white} />
+            <Plus size={14} color="#ffffff" />
             <Text style={styles.addBtnText}>Moment</Text>
           </TouchableOpacity>
           
@@ -74,7 +84,7 @@ export default function DestinationDetail() {
             style={styles.glassRoundBtn}
             onPress={() => router.push(`/edit-destination/${destination.id}`)}
           >
-            <Settings size={18} color={COLORS.white} />
+            <Settings size={18} color="#ffffff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -86,12 +96,12 @@ export default function DestinationDetail() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Info Block */}
-        <View style={styles.infoBlock}>
-          <Text style={styles.nameText}>{destination.name}</Text>
+        <View style={[styles.infoBlock, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]}>
+          <Text style={[styles.nameText, { color: colors.textActive }]}>{destination.name}</Text>
           {destination.description ? (
-            <Text style={styles.descText}>{destination.description}</Text>
+            <Text style={[styles.descText, { color: colors.textSubtle }]}>{destination.description}</Text>
           ) : null}
-          <Text style={styles.momentCountText}>
+          <Text style={[styles.momentCountText, { color: colors.textMuted }]}>
             {moments.length} khoảnh khắc được ghi lại
           </Text>
         </View>
@@ -100,46 +110,54 @@ export default function DestinationDetail() {
         <View style={styles.timelineSection}>
           {moments.length === 0 ? (
             <View style={styles.emptyMoments}>
-              <Text style={styles.emptyTitle}>Chưa có khoảnh khắc nào</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Chưa có khoảnh khắc nào</Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
                 Hãy tạo moment đầu tiên cho {destination.name}!
               </Text>
               <TouchableOpacity
-                style={styles.createMomentBtn}
+                style={[
+                  styles.createMomentBtn,
+                  { 
+                    backgroundColor: colors.accentPrimaryGlass 
+                  }
+                ]}
                 onPress={() => router.push('/create')}
               >
-                <Plus size={14} color={COLORS.white} />
+                <Plus size={14} color="#ffffff" />
                 <Text style={styles.createMomentBtnText}>Tạo Moment</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
-              <Text style={styles.sectionTitle}>
+              <Text style={[styles.sectionTitle, { color: colors.textActive }]}>
                 Moments timeline ({moments.length})
               </Text>
               {moments.map((moment, idx) => (
                 <View key={moment.id} style={styles.timelineItem}>
                   {/* Left timeline bar */}
                   <View style={styles.timelineLeft}>
-                    <View style={styles.circleMarker} />
-                    {idx < moments.length - 1 && <View style={styles.lineMarker} />}
+                    <View style={[styles.circleMarker, { backgroundColor: colors.textActive, borderColor: colors.background }]} />
+                    {idx < moments.length - 1 && <View style={[styles.lineMarker, { backgroundColor: colors.borderGlassHeavy }]} />}
                   </View>
 
                   {/* Right content card */}
-                  <View style={styles.momentCard}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={[styles.momentCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]}
+                    onPress={() => router.push(`/edit-moment/${moment.id}`)}
+                  >
                     <Image source={{ uri: moment.image_url }} style={styles.momentImage} />
                     <View style={styles.momentBody}>
                       <View style={styles.momentHeaderRow}>
-                        <Text style={styles.momentTitle}>{moment.title}</Text>
-                        <TouchableOpacity
-                          style={styles.momentEditBtn}
-                          onPress={() => router.push(`/edit-moment/${moment.id}`)}
+                        <Text style={[styles.momentTitle, { color: colors.textActive }]}>{moment.title}</Text>
+                        <View
+                          style={[styles.momentEditBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}
                         >
-                          <Edit3 size={14} color={COLORS.textInactive} />
-                        </TouchableOpacity>
+                          <Edit3 size={14} color={colors.textInactive} />
+                        </View>
                       </View>
                       {moment.description ? (
-                        <Text style={styles.momentDesc} numberOfLines={2}>
+                        <Text style={[styles.momentDesc, { color: colors.textSubtle }]} numberOfLines={2}>
                           {moment.description}
                         </Text>
                       ) : null}
@@ -147,22 +165,22 @@ export default function DestinationDetail() {
                       {/* Metadata Row */}
                       <View style={styles.metaRow}>
                         <View style={styles.metaItem}>
-                          <MapPin size={12} color={COLORS.textMuted} />
-                          <Text style={styles.metaText}>{moment.location}</Text>
+                          <MapPin size={12} color={colors.textMuted} />
+                          <Text style={[styles.metaText, { color: colors.textMuted }]}>{moment.location}</Text>
                         </View>
                         <View style={styles.metaItem}>
-                          <Calendar size={12} color={COLORS.textMuted} />
-                          <Text style={styles.metaText}>{moment.date}</Text>
+                          <Calendar size={12} color={colors.textMuted} />
+                          <Text style={[styles.metaText, { color: colors.textMuted }]}>{moment.date}</Text>
                         </View>
                         <View style={[styles.metaItem, { marginLeft: 'auto' }]}>
-                          <Heart size={12} color={COLORS.accentRed} />
-                          <Text style={[styles.metaText, { color: COLORS.accentRed }]}>
+                          <Heart size={12} color={colors.accentRed} />
+                          <Text style={[styles.metaText, { color: colors.accentRed }]}>
                             {moment.likes}
                           </Text>
                         </View>
                       </View>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               ))}
             </>
@@ -181,7 +199,6 @@ const styles = StyleSheet.create({
   },
   stateText: {
     fontFamily: 'System',
-    color: COLORS.textInactive,
     fontSize: 14,
     textAlign: 'center',
     paddingHorizontal: 32,
@@ -189,13 +206,10 @@ const styles = StyleSheet.create({
   backBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
   },
   backBtnText: {
-    color: COLORS.white,
     fontSize: 14,
   },
   imageContainer: {
@@ -211,7 +225,7 @@ const styles = StyleSheet.create({
   },
   shadowOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,12,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   headerActions: {
     position: 'absolute',
@@ -226,9 +240,9 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -244,10 +258,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(59, 130, 246, 0.75)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
@@ -256,7 +268,7 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.white,
+    color: '#ffffff',
   },
   scrollContent: {
     paddingTop: 260,
@@ -264,29 +276,24 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   infoBlock: {
-    backgroundColor: 'rgba(22,22,26,0.95)',
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
     gap: 8,
   },
   nameText: {
     fontFamily: 'System',
     fontSize: 28,
     fontWeight: '800',
-    color: COLORS.white,
   },
   descText: {
     fontFamily: 'System',
     fontSize: 14,
-    color: COLORS.textSubtle,
     lineHeight: 20,
   },
   momentCountText: {
     fontFamily: 'System',
     fontSize: 12,
-    color: COLORS.textMuted,
     marginTop: 4,
   },
   timelineSection: {
@@ -296,7 +303,6 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.white,
     paddingLeft: 4,
     marginBottom: 8,
   },
@@ -309,19 +315,16 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.white,
   },
   emptySubtitle: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.textInactive,
     textAlign: 'center',
   },
   createMomentBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(59, 130, 246, 0.75)',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -333,7 +336,7 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.white,
+    color: '#ffffff',
   },
   timelineItem: {
     flexDirection: 'row',
@@ -346,10 +349,8 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: COLORS.white,
     marginTop: 6,
     borderWidth: 2,
-    borderColor: COLORS.background,
     zIndex: 10,
   },
   lineMarker: {
@@ -357,21 +358,18 @@ const styles = StyleSheet.create({
     top: 18,
     bottom: -18,
     width: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   momentCard: {
     flex: 1,
-    backgroundColor: 'rgba(22,22,26,0.95)',
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
     marginBottom: 20,
   },
   momentImage: {
     width: '100%',
     height: 160,
-    backgroundColor: '#26262b',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   momentBody: {
     padding: 16,
@@ -387,7 +385,6 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 15,
     fontWeight: '600',
-    color: COLORS.white,
     lineHeight: 20,
     flex: 1,
   },
@@ -395,9 +392,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
@@ -405,7 +400,6 @@ const styles = StyleSheet.create({
   momentDesc: {
     fontFamily: 'System',
     fontSize: 13,
-    color: COLORS.textSubtle,
     lineHeight: 18,
   },
   metaRow: {
@@ -421,6 +415,5 @@ const styles = StyleSheet.create({
   metaText: {
     fontFamily: 'System',
     fontSize: 11,
-    color: COLORS.textMuted,
   },
 })

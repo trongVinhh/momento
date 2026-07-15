@@ -5,13 +5,14 @@ import { View, ActivityIndicator, Animated, Text, StyleSheet } from 'react-nativ
 import { Session } from '@supabase/supabase-js'
 
 import { supabase } from '../lib/supabase'
-import { COLORS } from '../constants/theme'
+import { ThemeProvider, useThemeContext } from '../context/ThemeContext'
 
-export default function RootLayout() {
+function RootLayoutContent() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const segments = useSegments()
+  const { theme, colors } = useThemeContext()
 
   // Các giá trị để làm animation cho loading screen
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -49,50 +50,50 @@ export default function RootLayout() {
           toValue: 1,
           duration: 900,
           useNativeDriver: true,
-        })
-      ]).start()
-
-      // 2. Nhịp thở (Pulse) lặp vô tận
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1200,
-            useNativeDriver: true,
-          })
-        ])
-      ).start()
+        }),
+      ]).start(() => {
+        // 2. Sau khi hiện lên, chạy lặp lại vô hạn hiệu ứng thở (Breathing/Pulse)
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulseAnim, {
+              toValue: 1.05,
+              duration: 1500,
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 0.95,
+              duration: 1500,
+              useNativeDriver: true,
+            }),
+          ])
+        ).start()
+      })
     }
   }, [loading])
 
-  // 3. Tự động điều hướng dựa trên Session và Màn hình hiện tại
+  // 3. Điều hướng Auth (Màn Login & Main App)
   useEffect(() => {
     if (loading) return
 
-    // segments[0] xác định xem user đang ở tab group "(tabs)", hay màn hình "login", v.v.
-    const inAuthGroup = segments[0] === '(tabs)' || segments[0] === 'destination'
+    const isAtLoginScreen = segments[0] === 'login'
 
-    if (!session && inAuthGroup) {
-      // Chưa login nhưng cố vào tab hoặc chi tiết -> Chuyển sang màn Login
-      router.replace('/login')
-    } else if (session && segments[0] === 'login') {
-      // Đã login nhưng đang ở màn Login -> Chuyển về màn hình chính Trips
+    if (session && isAtLoginScreen) {
+      // Đã đăng nhập nhưng đang ở màn login -> Vào app chính
       router.replace('/')
+    } else if (!session && !isAtLoginScreen) {
+      // Chưa đăng nhập mà đang ở màn khác màn login -> Bắt buộc ra màn login
+      router.replace('/login')
     }
   }, [session, loading, segments])
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        {/* Background neon blobs cho phong cách glassmorphic */}
-        <View style={styles.bgBlobLeft} />
-        <View style={styles.bgBlobRight} />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        {/* Glowing background blobs */}
+        <View style={[styles.bgBlobLeft, { backgroundColor: colors.accentPrimarySubtle }]} />
+        <View style={[styles.bgBlobRight, { backgroundColor: theme === 'light' ? 'rgba(139, 92, 246, 0.05)' : 'rgba(139, 92, 246, 0.1)' }]} />
 
+        {/* Brand visual stack with animated fade & scale */}
         <Animated.View
           style={[
             styles.brandContainer,
@@ -102,12 +103,13 @@ export default function RootLayout() {
             },
           ]}
         >
-          <Text style={styles.brandTitle}>Momento</Text>
-          <Text style={styles.brandSubtitle}>Ghi lại hành trình du lịch của bạn</Text>
+          <Text style={[styles.brandTitle, { color: colors.textActive }]}>Momento</Text>
+          <Text style={[styles.brandSubtitle, { color: colors.textSubtle }]}>Moment maps</Text>
         </Animated.View>
 
+        {/* Continuous activity spinner */}
         <View style={styles.spinnerWrapper}>
-          <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.4)" />
+          <ActivityIndicator size="small" color={theme === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.4)'} />
         </View>
       </View>
     )
@@ -130,10 +132,17 @@ export default function RootLayout() {
   )
 }
 
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutContent />
+    </ThemeProvider>
+  )
+}
+
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0a0a0c',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -146,13 +155,11 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 48,
     fontWeight: '900',
-    color: '#ffffff',
     letterSpacing: -1.5,
   },
   brandSubtitle: {
     fontFamily: 'System',
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
   },
   spinnerWrapper: {
@@ -166,8 +173,6 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
-    // Dùng cho web build hoặc fallback, fallback trên app là shadow/opacity
   },
   bgBlobRight: {
     position: 'absolute',
@@ -176,6 +181,5 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
   },
 })

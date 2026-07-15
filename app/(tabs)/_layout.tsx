@@ -4,11 +4,13 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Home, User, FileText, Map } from 'lucide-react-native'
+import { useTheme } from '../../hooks/useTheme'
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const pathname = usePathname()
+  const { colors, theme } = useTheme()
 
   // Xác định tab nào đang active dựa trên pathname
   const getActiveTab = () => {
@@ -21,7 +23,7 @@ export default function TabsLayout() {
   const activeTab = getActiveTab()
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0a0a0c' }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -41,10 +43,13 @@ export default function TabsLayout() {
       <View style={[styles.navWrapper, { bottom: insets.bottom + 24 }]}>
         <BlurView
           intensity={Platform.OS === 'android' ? 40 : 20}
-          tint="dark"
-          style={styles.navPill}
+          tint={colors.blurTint}
+          style={[styles.navPill, { 
+            backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(15,15,20,0.5)',
+            borderColor: colors.borderGlass
+          }]}
         >
-          <View style={styles.navPillInnerBorder} />
+          <View style={[styles.navPillInnerBorder, { borderColor: colors.borderGlass }]} />
 
           {/* Trips (index) — Tab */}
           <TouchableOpacity
@@ -54,14 +59,15 @@ export default function TabsLayout() {
           >
             <FileText
               size={20}
-              color={activeTab === 'trips' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
+              color={activeTab === 'trips' ? colors.textActive : colors.textInactive}
             />
             <Text
-              style={
+              style={[
                 activeTab === 'trips'
                   ? styles.navLabelActive
-                  : styles.navLabelInactive
-              }
+                  : styles.navLabelInactive,
+                { color: activeTab === 'trips' ? colors.textActive : colors.textInactive }
+              ]}
             >
               Trips
             </Text>
@@ -75,14 +81,15 @@ export default function TabsLayout() {
           >
             <Map
               size={20}
-              color={activeTab === 'map' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
+              color={activeTab === 'map' ? colors.textActive : colors.textInactive}
             />
             <Text
-              style={
+              style={[
                 activeTab === 'map'
                   ? styles.navLabelActive
-                  : styles.navLabelInactive
-              }
+                  : styles.navLabelInactive,
+                { color: activeTab === 'map' ? colors.textActive : colors.textInactive }
+              ]}
             >
               Map
             </Text>
@@ -96,14 +103,15 @@ export default function TabsLayout() {
           >
             <Home
               size={20}
-              color={activeTab === 'feed' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
+              color={activeTab === 'feed' ? colors.textActive : colors.textInactive}
             />
             <Text
-              style={
+              style={[
                 activeTab === 'feed'
                   ? styles.navLabelActive
-                  : styles.navLabelInactive
-              }
+                  : styles.navLabelInactive,
+                { color: activeTab === 'feed' ? colors.textActive : colors.textInactive }
+              ]}
             >
               Feed
             </Text>
@@ -117,14 +125,15 @@ export default function TabsLayout() {
           >
             <User
               size={20}
-              color={activeTab === 'account' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
+              color={activeTab === 'account' ? colors.textActive : colors.textInactive}
             />
             <Text
-              style={
+              style={[
                 activeTab === 'account'
                   ? styles.navLabelActive
-                  : styles.navLabelInactive
-              }
+                  : styles.navLabelInactive,
+                { color: activeTab === 'account' ? colors.textActive : colors.textInactive }
+              ]}
             >
               Account
             </Text>
@@ -150,6 +159,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 8,
     overflow: 'hidden',
+    borderWidth: 1,
   },
   navPillInnerBorder: {
     position: 'absolute',
@@ -159,7 +169,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   navItem: {
     flexDirection: 'column',
@@ -171,12 +180,10 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 10,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.5)',
   },
   navLabelActive: {
     fontFamily: 'System',
     fontSize: 10,
-    fontWeight: '500',
-    color: '#ffffff',
+    fontWeight: '600',
   },
 })

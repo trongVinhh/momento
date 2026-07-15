@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCreateDestination } from '../hooks/useCreateDestination'
 import { COLORS, GLASS_STYLES } from '../constants/theme'
+import { useTheme } from '../hooks/useTheme'
 import { globalStyles } from '../styles/globalStyles'
 import { POPULAR_COUNTRIES } from '../constants/mockData'
 
@@ -27,6 +28,7 @@ export default function CreateDestinationScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const [pickerVisible, setPickerVisible] = useState(false)
+  const { colors, theme, isDark } = useTheme()
 
   const {
     name,
@@ -42,19 +44,19 @@ export default function CreateDestinationScreen() {
   } = useCreateDestination()
 
   return (
-    <View style={globalStyles.container}>
-      <StatusBar style="light" translucent />
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} translucent />
 
       {/* Header */}
       <BlurView
         intensity={Platform.OS === 'android' ? 40 : GLASS_STYLES.headerIntensity}
-        tint={COLORS.tintDark}
-        style={[globalStyles.headerBase, { paddingTop: insets.top + 12 }]}
+        tint={colors.blurTint}
+        style={[globalStyles.headerBase, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass, borderBottomWidth: 1 }]}
       >
-        <TouchableOpacity style={styles.glassRoundBtn} onPress={() => router.back()}>
-          <ArrowLeft size={20} color={COLORS.white} />
+        <TouchableOpacity style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]} onPress={() => router.back()}>
+          <ArrowLeft size={20} color={colors.textActive} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Địa Điểm Mới</Text>
+        <Text style={[styles.headerTitle, { color: colors.textActive }]}>Địa Điểm Mới</Text>
         <View style={{ width: 40 }} />
       </BlurView>
 
@@ -72,7 +74,7 @@ export default function CreateDestinationScreen() {
         >
           {/* Ảnh bìa */}
           <TouchableOpacity
-            style={styles.imagePlaceholder}
+            style={[styles.imagePlaceholder, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)', borderColor: colors.borderGlass }]}
             activeOpacity={0.8}
             onPress={pickImage}
           >
@@ -80,11 +82,11 @@ export default function CreateDestinationScreen() {
               <Image source={{ uri: imageUri }} style={styles.previewImage} />
             ) : (
               <View style={styles.placeholderContent}>
-                <View style={styles.cameraCircle}>
-                  <Camera size={28} color={COLORS.textInactive} />
+                <View style={[styles.cameraCircle, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.06)', borderColor: colors.borderGlass }]}>
+                  <Camera size={28} color={colors.textInactive} />
                 </View>
-                <Text style={styles.placeholderTitle}>Chọn ảnh bìa địa điểm</Text>
-                <Text style={styles.placeholderSub}>Tỷ lệ 16:9 được khuyên dùng</Text>
+                <Text style={[styles.placeholderTitle, { color: colors.textInactive }]}>Chọn ảnh bìa địa điểm</Text>
+                <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>Tỷ lệ 16:9 được khuyên dùng</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -93,32 +95,32 @@ export default function CreateDestinationScreen() {
           <View style={styles.form}>
             {/* Destination Name */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tên địa điểm</Text>
-              <View style={styles.inputWrapper}>
-                <MapPin size={16} color={COLORS.textMuted} style={styles.icon} />
+              <Text style={[styles.label, { color: colors.textActive }]}>Tên địa điểm</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
+                <MapPin size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
                   placeholder="Ví dụ: Đà Nẵng, Hội An, Huế..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={name}
                   onChangeText={setName}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textActive }]}
                 />
               </View>
             </View>
 
             {/* Country (Chọn thay vì nhập tay) */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Quốc gia</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>Quốc gia</Text>
               <TouchableOpacity
-                style={styles.inputWrapper}
+                style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}
                 activeOpacity={0.8}
                 onPress={() => setPickerVisible(true)}
               >
-                <Compass size={16} color={COLORS.textMuted} style={styles.icon} />
-                <Text style={[styles.inputText, !country && { color: COLORS.textMuted }]}>
+                <Compass size={16} color={colors.textMuted} style={styles.icon} />
+                <Text style={[styles.inputText, { color: country ? colors.textActive : colors.textMuted }]}>
                   {country || 'Chọn quốc gia...'}
                 </Text>
-                <ChevronDown size={16} color={COLORS.textMuted} style={styles.rightIcon} />
+                <ChevronDown size={16} color={colors.textInactive} style={styles.rightIcon} />
               </TouchableOpacity>
             </View>
 
@@ -136,11 +138,11 @@ export default function CreateDestinationScreen() {
               >
                 <BlurView
                   intensity={Platform.OS === 'android' ? 40 : 25}
-                  tint="dark"
-                  style={styles.modalContent}
+                  tint={colors.blurTint}
+                  style={[styles.modalContent, { backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(20, 20, 25, 0.92)', borderColor: colors.borderGlass }]}
                 >
-                  <View style={styles.modalInnerBorder} />
-                  <Text style={styles.modalTitle}>Chọn Quốc Gia</Text>
+                  <View style={[styles.modalInnerBorder, { borderColor: colors.borderGlass }]} />
+                  <Text style={[styles.modalTitle, { color: colors.textActive }]}>Chọn Quốc Gia</Text>
                   
                   <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                     {POPULAR_COUNTRIES.map((item) => (
@@ -148,7 +150,11 @@ export default function CreateDestinationScreen() {
                         key={item}
                         style={[
                           styles.modalItem,
-                          country === item && styles.modalItemActive,
+                          { 
+                            backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.01)' : 'rgba(255, 255, 255, 0.02)',
+                            borderColor: colors.borderGlass 
+                          },
+                          country === item && [styles.modalItemActive, { backgroundColor: colors.accentPrimarySubtle, borderColor: colors.accentPrimaryBorder }],
                         ]}
                         onPress={() => {
                           setCountry(item)
@@ -158,7 +164,8 @@ export default function CreateDestinationScreen() {
                         <Text
                           style={[
                             styles.modalItemText,
-                            country === item && styles.modalItemTextActive,
+                            { color: colors.textInactive },
+                            country === item && [styles.modalItemTextActive, { color: colors.accentPrimary, fontWeight: '700' }],
                           ]}
                         >
                           {item}
@@ -172,32 +179,39 @@ export default function CreateDestinationScreen() {
 
             {/* Description */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Mô tả (tuỳ chọn)</Text>
-              <View style={styles.inputWrapper}>
-                <FileText size={16} color={COLORS.textMuted} style={styles.icon} />
+              <Text style={[styles.label, { color: colors.textActive }]}>Mô tả (tuỳ chọn)</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
+                <FileText size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
                   placeholder="Cảm nhận của bạn về địa điểm này..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={description}
                   onChangeText={setDescription}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textActive }]}
                 />
               </View>
             </View>
 
             {/* Submit Button */}
             <TouchableOpacity
-              style={styles.submitBtn}
+              style={[
+                styles.submitBtn,
+                { 
+                  backgroundColor: colors.accentPrimaryGlass,
+                  borderColor: colors.borderGlass,
+                  shadowColor: colors.accentPrimary
+                }
+              ]}
               activeOpacity={0.8}
               onPress={handleSaveDestination}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={COLORS.white} />
+                <ActivityIndicator color="#ffffff" />
               ) : (
                 <View style={styles.btnContent}>
-                  <Send size={18} color={COLORS.white} />
-                  <Text style={styles.submitBtnText}>Tạo Địa Điểm</Text>
+                  <Send size={18} color="#ffffff" />
+                  <Text style={[styles.submitBtnText, { color: '#ffffff' }]}>Tạo Địa Điểm</Text>
                 </View>
               )}
             </TouchableOpacity>

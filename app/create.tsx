@@ -19,11 +19,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCreateMoment } from '../hooks/useCreateMoment'
 import { COLORS, GLASS_STYLES } from '../constants/theme'
+import { useTheme } from '../hooks/useTheme'
 import { globalStyles } from '../styles/globalStyles'
 
 export default function CreateMomentScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { colors, theme, isDark } = useTheme()
 
   const {
     title,
@@ -43,19 +45,19 @@ export default function CreateMomentScreen() {
   } = useCreateMoment()
 
   return (
-    <View style={globalStyles.container}>
-      <StatusBar style="light" translucent />
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} translucent />
 
       {/* Header */}
       <BlurView
         intensity={Platform.OS === 'android' ? 40 : GLASS_STYLES.headerIntensity}
-        tint={COLORS.tintDark}
-        style={[globalStyles.headerBase, { paddingTop: insets.top + 12 }]}
+        tint={colors.blurTint}
+        style={[globalStyles.headerBase, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass, borderBottomWidth: 1 }]}
       >
-        <TouchableOpacity style={styles.glassRoundBtn} onPress={() => router.back()}>
-          <ArrowLeft size={20} color={COLORS.white} />
+        <TouchableOpacity style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]} onPress={() => router.back()}>
+          <ArrowLeft size={20} color={colors.textActive} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Moment</Text>
+        <Text style={[styles.headerTitle, { color: colors.textActive }]}>New Moment</Text>
         <View style={{ width: 40 }} />
       </BlurView>
 
@@ -70,7 +72,7 @@ export default function CreateMomentScreen() {
         >
           {/* Image Upload Area */}
           <TouchableOpacity
-            style={styles.imagePlaceholder}
+            style={[styles.imagePlaceholder, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)', borderColor: colors.borderGlass }]}
             activeOpacity={0.8}
             onPress={pickImage}
           >
@@ -78,8 +80,8 @@ export default function CreateMomentScreen() {
               <Image source={{ uri: imageUri }} style={styles.previewImage} />
             ) : (
               <View style={styles.placeholderContent}>
-                <Camera size={32} color={COLORS.textInactive} />
-                <Text style={styles.placeholderText}>Chọn ảnh từ thư viện điện thoại</Text>
+                <Camera size={32} color={colors.textInactive} />
+                <Text style={[styles.placeholderText, { color: colors.textInactive }]}>Chọn ảnh từ thư viện điện thoại</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -88,15 +90,15 @@ export default function CreateMomentScreen() {
           <View style={styles.form}>
             {/* Title */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tiêu đề khoảnh khắc</Text>
-              <View style={styles.inputWrapper}>
-                <Type size={16} color={COLORS.textMuted} style={styles.icon} />
+              <Text style={[styles.label, { color: colors.textActive }]}>Tiêu đề khoảnh khắc</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
+                <Type size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
                   placeholder="Ví dụ: Hoàng hôn rực rỡ ở đền thờ..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={title}
                   onChangeText={setTitle}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textActive }]}
                 />
               </View>
             </View>
@@ -104,28 +106,34 @@ export default function CreateMomentScreen() {
             {/* Destination Selector - Dynamic */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <Text style={styles.label}>Chọn địa điểm</Text>
+                <Text style={[styles.label, { color: colors.textActive }]}>Chọn địa điểm</Text>
                 <TouchableOpacity
-                  style={styles.addDestBtn}
+                  style={[
+                    styles.addDestBtn,
+                    { 
+                      backgroundColor: colors.accentPrimarySubtle,
+                      borderColor: colors.accentPrimaryBorder
+                    }
+                  ]}
                   onPress={() => router.push('/create-destination')}
                 >
-                  <Plus size={12} color="#3b82f6" />
-                  <Text style={styles.addDestBtnText}>Thêm mới</Text>
+                  <Plus size={12} color={colors.accentPrimary} />
+                  <Text style={[styles.addDestBtnText, { color: colors.accentPrimary }]}>Thêm mới</Text>
                 </TouchableOpacity>
               </View>
 
               {loadingDestinations ? (
-                <View style={styles.destLoading}>
-                  <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
-                  <Text style={styles.destLoadingText}>Đang tải địa điểm...</Text>
+                <View style={[styles.destLoading, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.04)', borderColor: colors.borderGlass }]}>
+                  <ActivityIndicator size="small" color={colors.textInactive} />
+                  <Text style={[styles.destLoadingText, { color: colors.textMuted }]}>Đang tải địa điểm...</Text>
                 </View>
               ) : destinations.length === 0 ? (
                 <TouchableOpacity
-                  style={styles.noDestBtn}
+                  style={[styles.noDestBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.04)', borderColor: colors.borderGlass }]}
                   onPress={() => router.push('/create-destination')}
                 >
-                  <Plus size={16} color={COLORS.textInactive} />
-                  <Text style={styles.noDestText}>
+                  <Plus size={16} color={colors.textInactive} />
+                  <Text style={[styles.noDestText, { color: colors.textInactive }]}>
                     Chưa có địa điểm. Tạo địa điểm đầu tiên!
                   </Text>
                 </TouchableOpacity>
@@ -140,14 +148,19 @@ export default function CreateMomentScreen() {
                       key={dest.id}
                       style={[
                         styles.destPill,
-                        selectedDestId === dest.id && styles.destPillActive,
+                        { 
+                          backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
+                          borderColor: colors.borderGlass 
+                        },
+                        selectedDestId === dest.id && [styles.destPillActive, { backgroundColor: colors.accentPrimary, borderColor: colors.accentPrimary }],
                       ]}
                       onPress={() => setSelectedDestId(dest.id)}
                     >
                       <Text
                         style={[
                           styles.destPillText,
-                          selectedDestId === dest.id && styles.destPillTextActive,
+                          { color: colors.textInactive },
+                          selectedDestId === dest.id && [styles.destPillTextActive, { color: '#ffffff' }],
                         ]}
                       >
                         {dest.name}
@@ -160,46 +173,60 @@ export default function CreateMomentScreen() {
 
             {/* Specific Location Name */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Địa danh cụ thể</Text>
-              <View style={styles.inputWrapper}>
-                <MapPin size={16} color={COLORS.textMuted} style={styles.icon} />
+              <Text style={[styles.label, { color: colors.textActive }]}>Địa danh cụ thể</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
+                <MapPin size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
                   placeholder="Ví dụ: Bãi biển Mỹ Khê hoặc Đền Linh Ứng"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={locationName}
                   onChangeText={setLocationName}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textActive }]}
                 />
               </View>
             </View>
 
             {/* Description / Story */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Cảm nhận & Câu chuyện</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>Cảm nhận & Câu chuyện</Text>
               <TextInput
                 placeholder="Bạn có cảm xúc hay câu chuyện thú vị nào muốn lưu lại tại đây không?"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={4}
                 value={description}
                 onChangeText={setDescription}
-                style={styles.textArea}
+                style={[
+                  styles.textArea,
+                  { 
+                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
+                    borderColor: colors.borderGlass,
+                    color: colors.textActive
+                  }
+                ]}
               />
             </View>
 
             {/* Submit Button */}
             <TouchableOpacity
-              style={styles.submitBtn}
+              style={[
+                styles.submitBtn,
+                { 
+                  backgroundColor: colors.accentPrimaryGlass,
+                  borderColor: colors.borderGlass,
+                  shadowColor: colors.accentPrimary
+                }
+              ]}
               activeOpacity={0.8}
               onPress={handleSaveMoment}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={COLORS.white} />
+                <ActivityIndicator color="#ffffff" />
               ) : (
                 <View style={styles.btnContent}>
-                  <Send size={18} color={COLORS.white} />
-                  <Text style={styles.submitBtnText}>Lưu Khoảnh Khắc</Text>
+                  <Send size={18} color="#ffffff" />
+                  <Text style={[styles.submitBtnText, { color: '#ffffff' }]}>Lưu Khoảnh Khắc</Text>
                 </View>
               )}
             </TouchableOpacity>

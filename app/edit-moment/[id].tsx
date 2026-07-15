@@ -17,6 +17,7 @@ import { StatusBar } from 'expo-status-bar'
 import { Camera, Check, Trash2, ArrowLeft, MapPin, Type } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GLASS_STYLES, COLORS } from '../../constants/theme'
+import { useTheme } from '../../hooks/useTheme'
 import { useEditMoment } from '../../hooks/useEditMoment'
 import { globalStyles } from '../../styles/globalStyles'
 
@@ -24,6 +25,7 @@ export default function EditMomentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { colors, theme, isDark } = useTheme()
 
   const {
     title,
@@ -46,28 +48,28 @@ export default function EditMomentScreen() {
 
   if (fetching) {
     return (
-      <View style={[globalStyles.container, styles.centerState]}>
-        <ActivityIndicator size="large" color="rgba(255,255,255,0.5)" />
-        <Text style={styles.stateText}>Đang tải khoảnh khắc...</Text>
+      <View style={[globalStyles.container, styles.centerState, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+        <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải khoảnh khắc...</Text>
       </View>
     )
   }
 
   return (
-    <View style={globalStyles.container}>
-      <StatusBar style="light" translucent />
+    <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} translucent />
 
       {/* Header */}
       <BlurView
         intensity={Platform.OS === 'android' ? 40 : GLASS_STYLES.headerIntensity}
-        tint={COLORS.tintDark}
-        style={[globalStyles.headerBase, { paddingTop: insets.top + 12 }]}
+        tint={colors.blurTint}
+        style={[globalStyles.headerBase, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass, borderBottomWidth: 1 }]}
       >
-        <TouchableOpacity style={styles.glassRoundBtn} onPress={() => router.back()}>
-          <ArrowLeft size={20} color={COLORS.white} />
+        <TouchableOpacity style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]} onPress={() => router.back()}>
+          <ArrowLeft size={20} color={colors.textActive} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sửa Khoảnh Khắc</Text>
-        <TouchableOpacity style={[styles.glassRoundBtn, styles.deleteHeaderBtn]} onPress={handleDeleteMoment}>
+        <Text style={[styles.headerTitle, { color: colors.textActive }]}>Sửa Khoảnh Khắc</Text>
+        <TouchableOpacity style={[styles.glassRoundBtn, styles.deleteHeaderBtn, { backgroundColor: theme === 'light' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.25)' }]} onPress={handleDeleteMoment}>
           <Trash2 size={18} color="#ef4444" />
         </TouchableOpacity>
       </BlurView>
@@ -86,7 +88,7 @@ export default function EditMomentScreen() {
         >
           {/* Ảnh khoảnh khắc */}
           <TouchableOpacity
-            style={styles.imagePlaceholder}
+            style={[styles.imagePlaceholder, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)', borderColor: colors.borderGlass }]}
             activeOpacity={0.8}
             onPress={pickImage}
           >
@@ -94,8 +96,8 @@ export default function EditMomentScreen() {
               <Image source={{ uri: imageUri }} style={styles.previewImage} />
             ) : (
               <View style={styles.placeholderContent}>
-                <Camera size={32} color={COLORS.textInactive} />
-                <Text style={styles.placeholderText}>Chọn ảnh khoảnh khắc mới</Text>
+                <Camera size={32} color={colors.textInactive} />
+                <Text style={[styles.placeholderText, { color: colors.textInactive }]}>Chọn ảnh khoảnh khắc mới</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -104,26 +106,26 @@ export default function EditMomentScreen() {
           <View style={styles.form}>
             {/* Tiêu đề */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tiêu đề khoảnh khắc</Text>
-              <View style={styles.inputWrapper}>
-                <Type size={16} color={COLORS.textMuted} style={styles.icon} />
+              <Text style={[styles.label, { color: colors.textActive }]}>Tiêu đề khoảnh khắc</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
+                <Type size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
                   placeholder="Tiêu đề..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={title}
                   onChangeText={setTitle}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textActive }]}
                 />
               </View>
             </View>
 
             {/* Chọn địa điểm lớn (Destination) */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Thuộc địa điểm</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>Thuộc địa điểm</Text>
               {loadingDestinations ? (
-                <View style={styles.destLoading}>
-                  <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
-                  <Text style={styles.destLoadingText}>Đang tải địa điểm...</Text>
+                <View style={[styles.destLoading, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.04)', borderColor: colors.borderGlass }]}>
+                  <ActivityIndicator size="small" color={colors.textInactive} />
+                  <Text style={[styles.destLoadingText, { color: colors.textMuted }]}>Đang tải địa điểm...</Text>
                 </View>
               ) : (
                 <ScrollView
@@ -136,14 +138,19 @@ export default function EditMomentScreen() {
                       key={dest.id}
                       style={[
                         styles.destPill,
-                        selectedDestId === dest.id && styles.destPillActive,
+                        { 
+                          backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
+                          borderColor: colors.borderGlass 
+                        },
+                        selectedDestId === dest.id && [styles.destPillActive, { backgroundColor: colors.accentPrimary, borderColor: colors.accentPrimary }],
                       ]}
                       onPress={() => setSelectedDestId(dest.id)}
                     >
                       <Text
                         style={[
                           styles.destPillText,
-                          selectedDestId === dest.id && styles.destPillTextActive,
+                          { color: colors.textInactive },
+                          selectedDestId === dest.id && [styles.destPillTextActive, { color: '#ffffff' }],
                         ]}
                       >
                         {dest.name}
@@ -156,53 +163,73 @@ export default function EditMomentScreen() {
 
             {/* Địa danh cụ thể */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Địa danh cụ thể</Text>
-              <View style={styles.inputWrapper}>
-                <MapPin size={16} color={COLORS.textMuted} style={styles.icon} />
+              <Text style={[styles.label, { color: colors.textActive }]}>Địa danh cụ thể</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
+                <MapPin size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
                   placeholder="Ví dụ: Cầu Rồng, Cầu Vàng..."
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={colors.textMuted}
                   value={locationName}
                   onChangeText={setLocationName}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.textActive }]}
                 />
               </View>
             </View>
 
             {/* Cảm nhận & Câu chuyện */}
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Cảm nhận & Câu chuyện</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>Cảm nhận & Câu chuyện</Text>
               <TextInput
                 placeholder="Câu chuyện hoặc cảm xúc của bạn..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={4}
                 value={description}
                 onChangeText={setDescription}
-                style={styles.textArea}
+                style={[
+                  styles.textArea,
+                  { 
+                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)',
+                    borderColor: colors.borderGlass,
+                    color: colors.textActive
+                  }
+                ]}
               />
             </View>
 
             {/* Buttons */}
             <View style={styles.buttonGroup}>
               <TouchableOpacity
-                style={styles.submitBtn}
+                style={[
+                  styles.submitBtn,
+                  { 
+                    backgroundColor: colors.accentPrimaryGlass,
+                    borderColor: colors.borderGlass,
+                    shadowColor: colors.accentPrimary
+                  }
+                ]}
                 activeOpacity={0.8}
                 onPress={handleUpdateMoment}
                 disabled={loading}
               >
                 {loading ? (
-                  <ActivityIndicator color={COLORS.white} />
+                  <ActivityIndicator color="#ffffff" />
                 ) : (
                   <View style={styles.btnContent}>
-                    <Check size={18} color={COLORS.white} />
-                    <Text style={styles.submitBtnText}>Cập Nhật Khoảnh Khắc</Text>
+                    <Check size={18} color="#ffffff" />
+                    <Text style={[styles.submitBtnText, { color: '#ffffff' }]}>Cập Nhật Khoảnh Khắc</Text>
                   </View>
                 )}
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.deleteBtn}
+                style={[
+                  styles.deleteBtn,
+                  { 
+                    backgroundColor: theme === 'light' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.08)',
+                    borderColor: 'rgba(239, 68, 68, 0.25)'
+                  }
+                ]}
                 activeOpacity={0.8}
                 onPress={handleDeleteMoment}
                 disabled={loading}
