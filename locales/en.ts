@@ -110,5 +110,38 @@ export const en: Record<string, string> = {
   noDestSelected: 'Please select a destination first',
   momentImagesPlaceholder: 'Tap to select up to 10 images',
   addPhoto: 'Add photo',
-  updateMomentBtn: 'Update'
+  updateMomentBtn: 'Update',
+
+  // Profile Edit
+  editProfile: 'Edit Profile',
+  displayNameLabel: 'Display Name',
+  displayNamePlaceholder: 'Enter your display name...',
+  changeAvatar: 'Change Avatar',
+  saveProfile: 'Save Profile',
+  savingProfile: 'Saving...',
+  countriesCount: 'Countries',
+  bioLabel: 'Bio',
+
+  // Badges
+  badgesTitle: 'Achievements',
+  badgeLocked: 'Locked',
+  badgeUnlocked: 'Unlocked',
+
+  // Destination Badges
+  badge_explorer1_name: 'Explorer I',
+  badge_explorer1_desc: '5+ destinations visited',
+  badge_explorer2_name: 'Explorer II',
+  badge_explorer2_desc: '10+ destinations visited',
+  badge_voyager_name: 'Legendary Voyager',
+  badge_voyager_desc: '15+ destinations visited',
+
+  // Country Badges
+  badge_novice_name: 'Novice Traveler',
+  badge_novice_desc: 'First country explored',
+  badge_inter_name: 'International Adventurer',
+  badge_inter_desc: '2+ countries explored',
+  badge_border_name: 'Border Crosser',
+  badge_border_desc: '3+ countries explored',
+  badge_global_name: 'Global Citizen',
+  badge_global_desc: '5+ countries explored',
 }

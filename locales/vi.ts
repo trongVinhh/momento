@@ -110,5 +110,38 @@ export const vi: Record<string, string> = {
   noDestSelected: 'Vui lòng chọn địa danh lớn trước',
   momentImagesPlaceholder: 'Nhấp để chọn tối đa 10 hình ảnh',
   addPhoto: 'Thêm ảnh',
-  updateMomentBtn: 'Cập nhật'
+  updateMomentBtn: 'Cập nhật',
+
+  // Profile Edit
+  editProfile: 'Chỉnh sửa hồ sơ',
+  displayNameLabel: 'Tên hiển thị',
+  displayNamePlaceholder: 'Nhập tên hiển thị của bạn...',
+  changeAvatar: 'Đổi ảnh đại diện',
+  saveProfile: 'Lưu hồ sơ',
+  savingProfile: 'Đang lưu...',
+  countriesCount: 'Quốc gia',
+  bioLabel: 'Giới thiệu',
+
+  // Badges
+  badgesTitle: 'Thành tích',
+  badgeLocked: 'Chưa mở',
+  badgeUnlocked: 'Đã mở',
+
+  // Destination Badges
+  badge_explorer1_name: 'Nhà Thám Hiểm',
+  badge_explorer1_desc: '5+ điểm đến đã ghé thăm',
+  badge_explorer2_name: 'Lữ Hành Gia',
+  badge_explorer2_desc: '10+ điểm đến đã ghé thăm',
+  badge_voyager_name: 'Huyền Thoại Lữ Hành',
+  badge_voyager_desc: '15+ điểm đến đã ghé thăm',
+
+  // Country Badges
+  badge_novice_name: 'Du Khách Mới',
+  badge_novice_desc: 'Quốc gia đầu tiên được khám phá',
+  badge_inter_name: 'Nhà Phiêu Lưu Quốc Tế',
+  badge_inter_desc: '2+ quốc gia đã khám phá',
+  badge_border_name: 'Vượt Biên Giới',
+  badge_border_desc: '3+ quốc gia đã khám phá',
+  badge_global_name: 'Công Dân Toàn Cầu',
+  badge_global_desc: '5+ quốc gia đã khám phá',
 }
