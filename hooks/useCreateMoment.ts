@@ -1,19 +1,54 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Alert } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
-import { useRouter } from 'expo-router'
+import { useRouter, useNavigation } from 'expo-router'
 import { supabase } from '../lib/supabase'
+import type { DestinationRow } from '../constants/mockData'
 
 const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'https://your-cloudflare-worker.workers.dev'
 
 export function useCreateMoment() {
   const router = useRouter()
+  const navigation = useNavigation()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [locationName, setLocationName] = useState('')
-  const [selectedDest, setSelectedDest] = useState('tokyo')
+  const [selectedDestId, setSelectedDestId] = useState<string | null>(null)
   const [imageUri, setImageUri] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Danh sách destinations động từ Supabase
+  const [destinations, setDestinations] = useState<DestinationRow[]>([])
+  const [loadingDestinations, setLoadingDestinations] = useState(true)
+
+  const fetchDestinations = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoadingDestinations(true)
+    const { data, error } = await supabase
+      .from('destinations')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (!error && data) {
+      setDestinations(data)
+      // Tự động chọn destination đầu tiên nếu có và chưa chọn gì
+      if (data.length > 0 && !selectedDestId) {
+        setSelectedDestId(data[0].id)
+      }
+    }
+    setLoadingDestinations(false)
+  }, [selectedDestId])
+
+  // Tải dữ liệu ban đầu
+  useEffect(() => {
+    fetchDestinations(true)
+  }, [fetchDestinations])
+
+  // Tải lại khi màn hình được active/focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchDestinations(false)
+    })
+    return unsubscribe
+  }, [navigation, fetchDestinations])
 
   // 1. Chọn ảnh từ thư viện
   const pickImage = async () => {
@@ -75,8 +110,8 @@ export function useCreateMoment() {
 
   // 3. Đăng khoảnh khắc mới
   const handleSaveMoment = async () => {
-    if (!title || !locationName || !imageUri) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng chọn ảnh, nhập tiêu đề và địa danh cụ thể.')
+    if (!title || !locationName || !imageUri || !selectedDestId) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng chọn ảnh, nhập tiêu đề, địa danh và chọn địa điểm.')
       return
     }
 
@@ -95,7 +130,7 @@ export function useCreateMoment() {
         title,
         description,
         location: locationName,
-        destination_id: selectedDest,
+        destination_id: selectedDestId,
         image_url: imageUrl,
         user_id: user.id,
         likes: 0,
@@ -121,8 +156,10 @@ export function useCreateMoment() {
     setDescription,
     locationName,
     setLocationName,
-    selectedDest,
-    setSelectedDest,
+    selectedDestId,
+    setSelectedDestId,
+    destinations,
+    loadingDestinations,
     imageUri,
     pickImage,
     loading,

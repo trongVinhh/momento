@@ -12,16 +12,16 @@ import {
   Platform,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { Camera, MapPin, Type, Send, ArrowLeft, Plus } from 'lucide-react-native'
+import { Camera, Check, Trash2, ArrowLeft, MapPin, Type } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { GLASS_STYLES, COLORS } from '../../constants/theme'
+import { useEditMoment } from '../../hooks/useEditMoment'
+import { globalStyles } from '../../styles/globalStyles'
 
-import { useCreateMoment } from '../hooks/useCreateMoment'
-import { COLORS, GLASS_STYLES } from '../constants/theme'
-import { globalStyles } from '../styles/globalStyles'
-
-export default function CreateMomentScreen() {
+export default function EditMomentScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>()
   const insets = useSafeAreaInsets()
   const router = useRouter()
 
@@ -39,8 +39,19 @@ export default function CreateMomentScreen() {
     imageUri,
     pickImage,
     loading,
-    handleSaveMoment,
-  } = useCreateMoment()
+    fetching,
+    handleUpdateMoment,
+    handleDeleteMoment,
+  } = useEditMoment(id)
+
+  if (fetching) {
+    return (
+      <View style={[globalStyles.container, styles.centerState]}>
+        <ActivityIndicator size="large" color="rgba(255,255,255,0.5)" />
+        <Text style={styles.stateText}>Đang tải khoảnh khắc...</Text>
+      </View>
+    )
+  }
 
   return (
     <View style={globalStyles.container}>
@@ -55,8 +66,10 @@ export default function CreateMomentScreen() {
         <TouchableOpacity style={styles.glassRoundBtn} onPress={() => router.back()}>
           <ArrowLeft size={20} color={COLORS.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Moment</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Sửa Khoảnh Khắc</Text>
+        <TouchableOpacity style={[styles.glassRoundBtn, styles.deleteHeaderBtn]} onPress={handleDeleteMoment}>
+          <Trash2 size={18} color="#ef4444" />
+        </TouchableOpacity>
       </BlurView>
 
       <KeyboardAvoidingView
@@ -65,10 +78,13 @@ export default function CreateMomentScreen() {
       >
         <ScrollView
           style={globalStyles.scrollBase}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 76, paddingBottom: insets.bottom + 40 }]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: insets.top + 76, paddingBottom: insets.bottom + 40 },
+          ]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Image Upload Area */}
+          {/* Ảnh khoảnh khắc */}
           <TouchableOpacity
             style={styles.imagePlaceholder}
             activeOpacity={0.8}
@@ -79,20 +95,20 @@ export default function CreateMomentScreen() {
             ) : (
               <View style={styles.placeholderContent}>
                 <Camera size={32} color={COLORS.textInactive} />
-                <Text style={styles.placeholderText}>Chọn ảnh từ thư viện điện thoại</Text>
+                <Text style={styles.placeholderText}>Chọn ảnh khoảnh khắc mới</Text>
               </View>
             )}
           </TouchableOpacity>
 
-          {/* Form Fields */}
+          {/* Form */}
           <View style={styles.form}>
-            {/* Title */}
+            {/* Tiêu đề */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Tiêu đề khoảnh khắc</Text>
               <View style={styles.inputWrapper}>
                 <Type size={16} color={COLORS.textMuted} style={styles.icon} />
                 <TextInput
-                  placeholder="Ví dụ: Hoàng hôn rực rỡ ở đền thờ..."
+                  placeholder="Tiêu đề..."
                   placeholderTextColor={COLORS.textMuted}
                   value={title}
                   onChangeText={setTitle}
@@ -101,34 +117,14 @@ export default function CreateMomentScreen() {
               </View>
             </View>
 
-            {/* Destination Selector - Dynamic */}
+            {/* Chọn địa điểm lớn (Destination) */}
             <View style={styles.inputGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Chọn địa điểm</Text>
-                <TouchableOpacity
-                  style={styles.addDestBtn}
-                  onPress={() => router.push('/create-destination')}
-                >
-                  <Plus size={12} color="#3b82f6" />
-                  <Text style={styles.addDestBtnText}>Thêm mới</Text>
-                </TouchableOpacity>
-              </View>
-
+              <Text style={styles.label}>Thuộc địa điểm</Text>
               {loadingDestinations ? (
                 <View style={styles.destLoading}>
                   <ActivityIndicator size="small" color="rgba(255,255,255,0.4)" />
                   <Text style={styles.destLoadingText}>Đang tải địa điểm...</Text>
                 </View>
-              ) : destinations.length === 0 ? (
-                <TouchableOpacity
-                  style={styles.noDestBtn}
-                  onPress={() => router.push('/create-destination')}
-                >
-                  <Plus size={16} color={COLORS.textInactive} />
-                  <Text style={styles.noDestText}>
-                    Chưa có địa điểm. Tạo địa điểm đầu tiên!
-                  </Text>
-                </TouchableOpacity>
               ) : (
                 <ScrollView
                   horizontal
@@ -158,13 +154,13 @@ export default function CreateMomentScreen() {
               )}
             </View>
 
-            {/* Specific Location Name */}
+            {/* Địa danh cụ thể */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Địa danh cụ thể</Text>
               <View style={styles.inputWrapper}>
                 <MapPin size={16} color={COLORS.textMuted} style={styles.icon} />
                 <TextInput
-                  placeholder="Ví dụ: Bãi biển Mỹ Khê hoặc Đền Linh Ứng"
+                  placeholder="Ví dụ: Cầu Rồng, Cầu Vàng..."
                   placeholderTextColor={COLORS.textMuted}
                   value={locationName}
                   onChangeText={setLocationName}
@@ -173,11 +169,11 @@ export default function CreateMomentScreen() {
               </View>
             </View>
 
-            {/* Description / Story */}
+            {/* Cảm nhận & Câu chuyện */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Cảm nhận & Câu chuyện</Text>
               <TextInput
-                placeholder="Bạn có cảm xúc hay câu chuyện thú vị nào muốn lưu lại tại đây không?"
+                placeholder="Câu chuyện hoặc cảm xúc của bạn..."
                 placeholderTextColor={COLORS.textMuted}
                 multiline
                 numberOfLines={4}
@@ -187,22 +183,36 @@ export default function CreateMomentScreen() {
               />
             </View>
 
-            {/* Submit Button */}
-            <TouchableOpacity
-              style={styles.submitBtn}
-              activeOpacity={0.8}
-              onPress={handleSaveMoment}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={COLORS.white} />
-              ) : (
+            {/* Buttons */}
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity
+                style={styles.submitBtn}
+                activeOpacity={0.8}
+                onPress={handleUpdateMoment}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <View style={styles.btnContent}>
+                    <Check size={18} color={COLORS.white} />
+                    <Text style={styles.submitBtnText}>Cập Nhật Khoảnh Khắc</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                activeOpacity={0.8}
+                onPress={handleDeleteMoment}
+                disabled={loading}
+              >
                 <View style={styles.btnContent}>
-                  <Send size={18} color={COLORS.white} />
-                  <Text style={styles.submitBtnText}>Lưu Khoảnh Khắc</Text>
+                  <Trash2 size={18} color="#ef4444" />
+                  <Text style={styles.deleteBtnText}>Xóa Khoảnh Khắc này</Text>
                 </View>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -211,6 +221,16 @@ export default function CreateMomentScreen() {
 }
 
 const styles = StyleSheet.create({
+  centerState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  stateText: {
+    fontFamily: 'System',
+    fontSize: 14,
+    color: COLORS.textInactive,
+  },
   glassRoundBtn: {
     width: 38,
     height: 38,
@@ -220,6 +240,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  deleteHeaderBtn: {
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    backgroundColor: 'rgba(239, 68, 68, 0.06)',
   },
   headerTitle: {
     fontFamily: 'System',
@@ -249,13 +273,11 @@ const styles = StyleSheet.create({
   placeholderContent: {
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 32,
   },
   placeholderText: {
     fontFamily: 'System',
     fontSize: 13,
     color: COLORS.textInactive,
-    textAlign: 'center',
   },
   form: {
     gap: 18,
@@ -263,34 +285,12 @@ const styles = StyleSheet.create({
   inputGroup: {
     gap: 8,
   },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   label: {
     fontFamily: 'System',
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.white,
     paddingLeft: 2,
-  },
-  addDestBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.25)',
-  },
-  addDestBtnText: {
-    fontFamily: 'System',
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#3b82f6',
   },
   destLoading: {
     flexDirection: 'row',
@@ -308,46 +308,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textMuted,
   },
-  noDestBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderStyle: 'dashed',
-  },
-  noDestText: {
-    fontFamily: 'System',
-    fontSize: 13,
-    color: COLORS.textInactive,
-    flex: 1,
-  },
   destRow: {
     gap: 8,
     paddingVertical: 2,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    height: 52,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  icon: {
-    marginRight: 12,
-  },
-  input: {
-    flex: 1,
-    color: COLORS.white,
-    fontSize: 14,
-    fontFamily: 'System',
   },
   destPill: {
     paddingHorizontal: 16,
@@ -370,6 +333,25 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: '600',
   },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    height: 52,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  icon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'System',
+  },
   textArea: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
@@ -382,13 +364,16 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     minHeight: 100,
   },
+  buttonGroup: {
+    gap: 12,
+    marginTop: 12,
+  },
   submitBtn: {
     backgroundColor: 'rgba(59, 130, 246, 0.75)',
     borderRadius: 12,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     shadowColor: '#3b82f6',
@@ -406,5 +391,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.white,
+  },
+  deleteBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderRadius: 12,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+  },
+  deleteBtnText: {
+    fontFamily: 'System',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ef4444',
   },
 })

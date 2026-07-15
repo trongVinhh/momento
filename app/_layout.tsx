@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, Animated, Text, StyleSheet } from 'react-native'
 import { Session } from '@supabase/supabase-js'
 
 import { supabase } from '../lib/supabase'
@@ -12,6 +12,11 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const segments = useSegments()
+
+  // Các giá trị để làm animation cho loading screen
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const scaleAnim = useRef(new Animated.Value(0.92)).current
+  const pulseAnim = useRef(new Animated.Value(1)).current
 
   // 1. Lắng nghe thay đổi trạng thái Authentication từ Supabase
   useEffect(() => {
@@ -30,7 +35,42 @@ export default function RootLayout() {
     }
   }, [])
 
-  // 2. Tự động điều hướng dựa trên Session và Màn hình hiện tại
+  // 2. Chạy Animation cho màn hình Loading
+  useEffect(() => {
+    if (loading) {
+      // 1. Fade in + Scale up logo ban đầu
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 900,
+          useNativeDriver: true,
+        })
+      ]).start()
+
+      // 2. Nhịp thở (Pulse) lặp vô tận
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          })
+        ])
+      ).start()
+    }
+  }, [loading])
+
+  // 3. Tự động điều hướng dựa trên Session và Màn hình hiện tại
   useEffect(() => {
     if (loading) return
 
@@ -48,8 +88,27 @@ export default function RootLayout() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={COLORS.white} />
+      <View style={styles.loadingContainer}>
+        {/* Background neon blobs cho phong cách glassmorphic */}
+        <View style={styles.bgBlobLeft} />
+        <View style={styles.bgBlobRight} />
+
+        <Animated.View
+          style={[
+            styles.brandContainer,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }, { scale: pulseAnim }],
+            },
+          ]}
+        >
+          <Text style={styles.brandTitle}>Momento</Text>
+          <Text style={styles.brandSubtitle}>Ghi lại hành trình du lịch của bạn</Text>
+        </Animated.View>
+
+        <View style={styles.spinnerWrapper}>
+          <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.4)" />
+        </View>
       </View>
     )
   }
@@ -70,3 +129,53 @@ export default function RootLayout() {
     </SafeAreaProvider>
   )
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0a0a0c',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  brandContainer: {
+    alignItems: 'center',
+    gap: 10,
+    zIndex: 10,
+  },
+  brandTitle: {
+    fontFamily: 'System',
+    fontSize: 48,
+    fontWeight: '900',
+    color: '#ffffff',
+    letterSpacing: -1.5,
+  },
+  brandSubtitle: {
+    fontFamily: 'System',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+  },
+  spinnerWrapper: {
+    position: 'absolute',
+    bottom: 80,
+  },
+  bgBlobLeft: {
+    position: 'absolute',
+    left: -100,
+    top: '30%',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    // Dùng cho web build hoặc fallback, fallback trên app là shadow/opacity
+  },
+  bgBlobRight: {
+    position: 'absolute',
+    right: -100,
+    bottom: '30%',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+  },
+})

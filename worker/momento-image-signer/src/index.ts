@@ -1,38 +1,24 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// Hàm tự động xác thực JWT Token HS256 từ Supabase
-async function verifyJWT(token, secret) {
+// Xác thực JWT Token bằng cách gọi Supabase Auth API
+// Cách này hoạt động với mọi thuật toán ký (HS256, ES256...) vì Supabase tự xử lý
+async function verifySupabaseToken(token: string, supabaseUrl: string, supabaseAnonKey: string): Promise<boolean> {
 	try {
-		const parts = token.split('.');
-		if (parts.length !== 3) return false;
-
-		const [headerB64, payloadB64, signatureB64] = parts;
-		const encoder = new TextEncoder();
-		const keyData = encoder.encode(secret);
-		const key = await crypto.subtle.importKey(
-			"raw",
-			keyData,
-			{ name: "HMAC", hash: "SHA-256" },
-			false,
-			["verify"]
-		);
-
-		const data = encoder.encode(`${headerB64}.${payloadB64}`);
-		const signature = new Uint8Array(
-			atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/'))
-				.split('')
-				.map(c => c.charCodeAt(0))
-		);
-
-		return await crypto.subtle.verify("HMAC", key, signature, data);
-	} catch (err) {
+		const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+			headers: {
+				"Authorization": `Bearer ${token}`,
+				"apikey": supabaseAnonKey,
+			},
+		});
+		return response.ok; // 200 = token hợp lệ, 401 = không hợp lệ
+	} catch {
 		return false;
 	}
 }
 
 export default {
-	async fetch(request, env) {
+	async fetch(request: Request, env: Env) {
 		// Cấu hình CORS Preflight
 		if (request.method === "OPTIONS") {
 			return new Response(null, {
@@ -51,14 +37,14 @@ export default {
 			return new Response("Not Found", { status: 404 });
 		}
 
-		// 1. Xác thực người dùng qua Supabase JWT Token
+		// 1. Xác thực người dùng qua Supabase Auth API
 		const authHeader = request.headers.get("Authorization");
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {
 			return new Response("Unauthorized", { status: 401 });
 		}
 
 		const token = authHeader.split(" ")[1];
-		const isValidToken = await verifyJWT(token, env.SUPABASE_JWT_SECRET);
+		const isValidToken = await verifySupabaseToken(token, env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 		if (!isValidToken) {
 			return new Response("Unauthorized: Invalid Token", { status: 401 });
 		}
@@ -100,7 +86,7 @@ export default {
 					}
 				}
 			);
-		} catch (error) {
+		} catch (error: any) {
 			return new Response(`Server Error: ${error.message}`, { status: 500 });
 		}
 	}
