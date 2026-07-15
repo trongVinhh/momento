@@ -160,7 +160,11 @@ export default function CreateDestinationScreen() {
                             backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.01)' : 'rgba(255, 255, 255, 0.02)',
                             borderColor: colors.borderGlass 
                           },
-                          country === item && [styles.modalItemActive, { backgroundColor: colors.accentPrimarySubtle, borderColor: colors.accentPrimaryBorder }],
+                          country === item && {
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.75)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.2)',
+                            borderWidth: 1.5,
+                          },
                         ]}
                         onPress={() => {
                           setCountry(item)
@@ -171,7 +175,7 @@ export default function CreateDestinationScreen() {
                           style={[
                             styles.modalItemText,
                             { color: colors.textInactive },
-                            country === item && [styles.modalItemTextActive, { color: colors.accentPrimary, fontWeight: '700' }],
+                            country === item && { color: colors.textActive, fontWeight: '700' },
                           ]}
                         >
                           {item}

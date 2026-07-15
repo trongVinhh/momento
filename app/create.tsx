@@ -212,19 +212,19 @@ export default function CreateMomentScreen() {
                             borderColor: colors.borderGlass
                           },
                           isActive && {
-                            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.16)' : 'rgba(220, 38, 38, 0.1)',
-                            borderColor: colors.accentPrimary,
+                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.75)',
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.2)',
                             borderWidth: 1.5,
                           },
                         ]}
                         onPress={() => setSelectedDestId(dest.id)}
                       >
-                        <MapPin size={12} color={isActive ? colors.accentPrimary : colors.textMuted} style={{ marginRight: 2 }} />
+                        <MapPin size={12} color={isActive ? colors.textActive : colors.textMuted} style={{ marginRight: 2 }} />
                         <Text
                           style={[
                             styles.destPillText,
                             { color: colors.textInactive },
-                            isActive && { color: colors.accentPrimary, fontWeight: '700' },
+                            isActive && { color: colors.textActive, fontWeight: '700' },
                           ]}
                         >
                           {dest.name}

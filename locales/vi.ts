@@ -66,13 +66,13 @@ export const vi: Record<string, string> = {
   // Destination Detail
   destinationDetailTitle: 'Chi tiết điểm đến',
   momentsTimeline: 'Dòng thời gian ({{count}})',
-  createMomentBtn: 'Tạo Moment',
+  createMomentBtn: 'Thêm',
   emptyMoments: 'Chưa có khoảnh khắc nào tại đây',
   emptyMomentsSub: 'Chia sẻ kỷ niệm đầu tiên của chuyến đi này nhé!',
-  addMomentHeader: 'Moment',
+  addMomentHeader: 'Khoảnh khách',
 
   // Moment Detail
-  momentDetailTitle: 'Chi tiết Moment',
+  momentDetailTitle: 'Chi tiết khoảnh khắc',
   momentStoryTitle: 'Câu chuyện & Cảm nhận',
   belongToDest: 'Thuộc',
   loadingMomentDetail: 'Đang tải chi tiết khoảnh khắc...',

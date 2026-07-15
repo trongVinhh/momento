@@ -52,8 +52,8 @@ export default function TripsTab() {
     return destinations.filter((d) => d.country === selectedCountry)
   }, [destinations, selectedCountry])
 
-  // 3. Chiều cao Header cố định
-  const headerHeight = insets.top + 56
+  // 3. Chiều cao Header động để chừa khoảng cho dải filter chips
+  const headerHeight = insets.top + 56 + (!loading && countries.length > 1 ? 52 : 0)
 
   return (
     <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
@@ -155,36 +155,15 @@ export default function TripsTab() {
         ))}
       </ScrollView>
 
-      {/* ── Header + Filter Dropdown (Kính mờ bao phủ) ── */}
+      {/* ── Header Container (Kính mờ bao phủ) ── */}
       <BlurView
         intensity={Platform.OS === 'android' ? 40 : 60}
         tint={colors.blurTint}
         style={[styles.headerContainer, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass }]}
       >
         <View style={styles.headerTitleRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.headerTitle, { color: colors.textActive }]}>{t('tabHome')}</Text>
-            {!loading && countries.length > 1 && (
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setDropdownOpen(!dropdownOpen)}
-                style={[
-                  styles.countryDropdownBtn,
-                  { 
-                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.05)',
-                    borderColor: colors.borderGlass
-                  }
-                ]}
-              >
-                <Text style={[styles.countryDropdownText, { color: colors.textSubtle }]}>
-                  {translateCountry(selectedCountry)}
-                </Text>
-                <ChevronDown size={14} color={colors.textInactive} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Nút thêm địa điểm mới */}
+          <Text style={[styles.headerTitle, { color: colors.textActive }]}>{t('tabHome')}</Text>
+          
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => router.push('/create-destination')}
@@ -194,46 +173,45 @@ export default function TripsTab() {
           </TouchableOpacity>
         </View>
 
-        {/* Hộp thoại kính mờ chọn quốc gia (Dropdown Overlay) */}
-        {dropdownOpen && !loading && countries.length > 1 && (
-          <View 
-            style={[
-              styles.dropdownList, 
-              { 
-                backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(20, 20, 25, 0.92)',
-                borderColor: colors.borderGlass,
-                shadowColor: isDark ? '#000000' : 'rgba(0,0,0,0.1)'
-              }
-            ]}
+        {/* Horizontal scroll of country chips */}
+        {!loading && countries.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScroll}
           >
-            <BlurView intensity={Platform.OS === 'android' ? 20 : 40} tint={colors.blurTint} style={StyleSheet.absoluteFillObject} />
-            <View style={[styles.dropdownInnerBorder, { borderColor: colors.borderGlass }]} />
-            <ScrollView style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
-              {countries.map((country) => (
+            {countries.map((country) => {
+              const isActive = selectedCountry === country
+              return (
                 <TouchableOpacity
                   key={country}
                   style={[
-                    styles.dropdownItem,
-                    selectedCountry === country && { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.04)' }
-                  ]}
-                  onPress={() => {
-                    setSelectedCountry(country)
-                    setDropdownOpen(false)
-                  }}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    { 
-                      color: selectedCountry === country ? colors.accentPrimary : colors.textActive,
-                      fontWeight: selectedCountry === country ? '700' : '400'
+                    styles.filterChip,
+                    {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
+                      borderColor: colors.borderGlass,
+                    },
+                    isActive && {
+                      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.75)',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.2)',
+                      borderWidth: 1.5,
                     }
-                  ]}>
+                  ]}
+                  onPress={() => setSelectedCountry(country)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: colors.textInactive },
+                      isActive && { color: colors.textActive, fontWeight: '700' }
+                    ]}
+                  >
                     {translateCountry(country)}
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+              )
+            })}
+          </ScrollView>
         )}
       </BlurView>
     </View>
@@ -269,49 +247,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countryDropdownBtn: {
+  filterScroll: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    gap: 8,
   },
-  countryDropdownText: {
-    fontFamily: 'System',
-    fontSize: 12,
-  },
-  dropdownList: {
-    position: 'absolute',
-    top: 56,
-    left: 24,
-    width: 160,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    paddingVertical: 4,
-    zIndex: 9999,
-  },
-  dropdownInnerBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 16,
-    borderWidth: 1,
-    pointerEvents: 'none',
-  },
-  dropdownItem: {
-    paddingVertical: 10,
+  filterChip: {
     paddingHorizontal: 16,
-    marginHorizontal: 4,
-    borderRadius: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  dropdownItemText: {
+  filterChipText: {
     fontFamily: 'System',
     fontSize: 13,
+    fontWeight: '500',
   },
   scrollContent: {
     paddingHorizontal: 24,
