@@ -10,6 +10,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Switch,
+  Alert,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { LogOut, Image as ImageIcon, Moon, Sun } from 'lucide-react-native'
@@ -19,15 +20,30 @@ import { supabase } from '../../lib/supabase'
 import { globalStyles } from '../../styles/globalStyles'
 import { useProfile } from '../../hooks/useProfile'
 import { useTheme } from '../../hooks/useTheme'
+import { useTranslation } from '../../context/LanguageContext'
 
 export default function AccountTab() {
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 56
   const { profile, loading, error, refetch } = useProfile()
   const { theme, colors, toggleTheme, isDark } = useTheme()
+  const { t, locale, setLocale } = useTranslation()
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
+    Alert.alert(
+      t('logoutBtn'),
+      t('logoutConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('logoutBtn'),
+          style: 'destructive',
+          onPress: async () => {
+            await supabase.auth.signOut()
+          },
+        },
+      ]
+    )
   }
 
   return (
@@ -38,7 +54,7 @@ export default function AccountTab() {
         tint={colors.blurTint}
         style={[globalStyles.headerBase, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass }]}
       >
-        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>My Travel Profile</Text>
+        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>{t('profileTitle')}</Text>
         
         <View style={styles.headerRightGroup}>
           {/* Custom Theme Toggle Pill */}
@@ -76,7 +92,7 @@ export default function AccountTab() {
         {loading && !profile && (
           <View style={styles.centerState}>
             <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
-            <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải thông tin cá nhân...</Text>
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>{t('loading')}</Text>
           </View>
         )}
 
@@ -85,7 +101,7 @@ export default function AccountTab() {
           <View style={styles.centerState}>
             <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
             <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
-              <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
+              <Text style={[styles.retryText, { color: colors.textActive }]}>{locale === 'vi' ? 'Thử lại' : 'Retry'}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -102,36 +118,72 @@ export default function AccountTab() {
               <Text style={[styles.nameText, { color: colors.textActive }]}>{profile.displayName}</Text>
               <Text style={[styles.emailText, { color: colors.textMuted }]}>{profile.email}</Text>
               <Text style={[styles.bioText, { color: colors.textSubtle }]}>
-                Ghi lại hành trình khám phá thế giới ✈️ | Yêu những khung cảnh hoang sơ và ẩm thực châu Á.
+                {locale === 'vi' 
+                  ? 'Ghi lại hành trình khám phá thế giới ✈️ | Yêu những khung cảnh hoang sơ và ẩm thực châu Á.'
+                  : 'Capturing the world ✈️ | Lover of wild landscapes and Asian cuisine.'}
               </Text>
 
               {/* Stats Bar */}
               <View style={[styles.statsBar, { borderTopColor: colors.borderGlass }]}>
                 <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: colors.textActive }]}>{profile.destinationsCount}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textInactive }]}>Trips</Text>
+                  <Text style={[styles.statLabel, { color: colors.textInactive }]}>{t('destinationsCount')}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: colors.textActive }]}>{profile.momentsCount}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textInactive }]}>Moments</Text>
+                  <Text style={[styles.statLabel, { color: colors.textInactive }]}>{t('momentsCount')}</Text>
                 </View>
                 <View style={styles.statItem}>
                   <Text style={[styles.statValue, { color: colors.textActive }]}>1</Text>
-                  <Text style={[styles.statLabel, { color: colors.textInactive }]}>Followers</Text>
+                  <Text style={[styles.statLabel, { color: colors.textInactive }]}>{locale === 'vi' ? 'Người theo dõi' : 'Followers'}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Settings Card */}
+            <View style={[styles.profileCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass, gap: 16, alignItems: 'stretch' }]}>
+              <Text style={[styles.settingsTitle, { color: colors.textActive }]}>
+                {t('settingsSection')}
+              </Text>
+              
+              {/* Language Selector Row */}
+              <View style={styles.settingsRow}>
+                <Text style={[styles.settingsLabel, { color: colors.textActive }]}>{t('languageLabel')}</Text>
+                <View style={[styles.langSelector, { backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', borderColor: colors.borderGlass }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.langBtn,
+                      locale === 'vi' && [styles.langBtnActive, { backgroundColor: colors.accentPrimary }]
+                    ]}
+                    onPress={() => setLocale('vi')}
+                  >
+                    <Text style={[styles.langText, locale === 'vi' ? { color: '#ffffff', fontWeight: '700' } : { color: colors.textInactive }]}>Tiếng Việt</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.langBtn,
+                      locale === 'en' && [styles.langBtnActive, { backgroundColor: colors.accentPrimary }]
+                    ]}
+                    onPress={() => setLocale('en')}
+                  >
+                    <Text style={[styles.langText, locale === 'en' ? { color: '#ffffff', fontWeight: '700' } : { color: colors.textInactive }]}>English</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
 
             {/* My Moments Gallery Grid */}
             <View style={styles.galleryContainer}>
-              <Text style={[styles.sectionTitle, { color: colors.textActive }]}>Captured Moments ({profile.momentsImages.length})</Text>
+              <Text style={[styles.sectionTitle, { color: colors.textActive }]}>{t('momentsCount')} ({profile.momentsImages.length})</Text>
               
               {profile.momentsImages.length === 0 ? (
                 <View style={[styles.emptyGallery, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]}>
                   <View style={[styles.emptyIconBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: colors.borderGlass }]}>
                     <ImageIcon size={24} color={colors.textInactive} />
                   </View>
-                  <Text style={[styles.emptyText, { color: colors.textInactive }]}>Chưa có khoảnh khắc nào được lưu lại.</Text>
+                  <Text style={[styles.emptyText, { color: colors.textInactive }]}>
+                    {locale === 'vi' ? 'Chưa có khoảnh khắc nào được lưu lại.' : 'No moments captured yet.'}
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.grid}>
@@ -166,6 +218,48 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
+  },
+  settingsTitle: {
+    fontFamily: 'System',
+    fontSize: 14,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  settingsLabel: {
+    fontFamily: 'System',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  langSelector: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 3,
+    gap: 4,
+  },
+  langBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  langBtnActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  langText: {
+    fontFamily: 'System',
+    fontSize: 12,
+    fontWeight: '600',
   },
   avatar: {
     width: 80,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigation } from 'expo-router'
 import { supabase } from '../lib/supabase'
+import { parseImageUrls } from '../utils/imageParser'
 
 export interface UserProfileData {
   email: string
@@ -65,7 +66,10 @@ export function useProfile() {
         avatarUrl: profData.avatar_url,
         destinationsCount: destCount || 0,
         momentsCount: momCount || 0,
-        momentsImages: (momImgs || []).map((m: any) => m.image_url),
+        momentsImages: (momImgs || []).map((m: any) => {
+          const urls = parseImageUrls(m.image_url)
+          return urls[0] || ''
+        }).filter(Boolean),
       })
     } catch (err: any) {
       setError(err.message || 'Không thể tải thông tin cá nhân.')

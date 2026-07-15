@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import { supabase } from '../lib/supabase'
 import type { DestinationRow } from '../constants/mockData'
+import { parseImageUrls } from '../utils/imageParser'
 
 const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'https://your-cloudflare-worker.workers.dev'
 
@@ -13,7 +14,7 @@ export function useEditMoment(id: string | undefined) {
   const [description, setDescription] = useState('')
   const [locationName, setLocationName] = useState('')
   const [selectedDestId, setSelectedDestId] = useState<string | null>(null)
-  const [imageUri, setImageUri] = useState<string | null>(null)
+  const [imageUris, setImageUris] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
 
@@ -54,7 +55,7 @@ export function useEditMoment(id: string | undefined) {
           setDescription(data.description || '')
           setLocationName(data.location)
           setSelectedDestId(data.destination_id)
-          setImageUri(data.image_url)
+          setImageUris(parseImageUrls(data.image_url))
         }
       } catch (err: any) {
         Alert.alert('Lỗi', err.message || 'Không thể tải thông tin khoảnh khắc.')
@@ -72,16 +73,31 @@ export function useEditMoment(id: string | undefined) {
       return
     }
 
+    if (imageUris.length >= 10) {
+      Alert.alert('Giới hạn', 'Bạn chỉ có thể chọn tối đa 10 ảnh cho mỗi khoảnh khắc.')
+      return
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsMultipleSelection: true,
       quality: 0.8,
     })
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri)
+      const selectedUris = result.assets.map(a => a.uri)
+      const totalUris = [...imageUris, ...selectedUris]
+      if (totalUris.length > 10) {
+        Alert.alert('Giới hạn', 'Đã tự động cắt bớt hình ảnh. Chỉ cho phép tối đa 10 ảnh.')
+        setImageUris(totalUris.slice(0, 10))
+      } else {
+        setImageUris(totalUris)
+      }
     }
+  }
+
+  const removeImage = (index: number) => {
+    setImageUris(prev => prev.filter((_, idx) => idx !== index))
   }
 
   const uploadImageToR2 = async (localUri: string): Promise<string> => {
@@ -116,17 +132,20 @@ export function useEditMoment(id: string | undefined) {
   }
 
   const handleUpdateMoment = async () => {
-    if (!title || !locationName || !imageUri || !selectedDestId || !id) {
+    if (imageUris.length === 0 || !title || !locationName || !selectedDestId || !id) {
       Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ tiêu đề, địa danh và ảnh.')
       return
     }
 
     setLoading(true)
     try {
-      let imageUrl = imageUri
-      if (!imageUri.startsWith('http')) {
-        imageUrl = await uploadImageToR2(imageUri)
-      }
+      // Tải lên song song các ảnh mới
+      const uploadedUrls = await Promise.all(
+        imageUris.map(async (uri) => {
+          if (uri.startsWith('http')) return uri
+          return await uploadImageToR2(uri)
+        })
+      )
 
       const { error } = await supabase
         .from('moments')
@@ -135,7 +154,7 @@ export function useEditMoment(id: string | undefined) {
           description: description.trim() || null,
           location: locationName,
           destination_id: selectedDestId,
-          image_url: imageUrl,
+          image_url: JSON.stringify(uploadedUrls),
         })
         .eq('id', id)
 
@@ -192,8 +211,9 @@ export function useEditMoment(id: string | undefined) {
     setSelectedDestId,
     destinations,
     loadingDestinations,
-    imageUri,
+    imageUris,
     pickImage,
+    removeImage,
     loading,
     fetching,
     handleUpdateMoment,

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -10,12 +10,15 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { ArrowLeft, MapPin, Calendar, Heart, Plus, Settings, Edit3 } from 'lucide-react-native'
+import { ArrowLeft, MapPin, Calendar, Heart, Plus, Settings, Edit3, Camera } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { BlurView } from 'expo-blur'
 
 import { globalStyles } from '../../styles/globalStyles'
 import { useDestinationDetail } from '../../hooks/useDestinationDetail'
 import { useTheme } from '../../hooks/useTheme'
+import { parseImageUrls } from '../../utils/imageParser'
+import { useTranslation } from '../../context/LanguageContext'
 
 export default function DestinationDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -23,13 +26,14 @@ export default function DestinationDetail() {
   const insets = useSafeAreaInsets()
   const { destination, moments, loading, error } = useDestinationDetail(id)
   const { colors, theme, isDark } = useTheme()
+  const { t, locale } = useTranslation()
 
   // Loading State
   if (loading) {
     return (
       <View style={[globalStyles.container, styles.centerState, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)'} />
-        <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải...</Text>
+        <Text style={[styles.stateText, { color: colors.textInactive }]}>{t('loading')}</Text>
       </View>
     )
   }
@@ -38,12 +42,12 @@ export default function DestinationDetail() {
   if (error || !destination) {
     return (
       <View style={[globalStyles.container, styles.centerState, { backgroundColor: colors.background }]}>
-        <Text style={[styles.stateText, { color: colors.textInactive }]}>{error || 'Không tìm thấy địa điểm.'}</Text>
+        <Text style={[styles.stateText, { color: colors.textInactive }]}>{error || (locale === 'vi' ? 'Không tìm thấy địa điểm.' : 'Destination not found.')}</Text>
         <TouchableOpacity 
           style={[styles.backBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} 
           onPress={() => router.back()}
         >
-          <Text style={[styles.backBtnText, { color: colors.textActive }]}>Quay lại</Text>
+          <Text style={[styles.backBtnText, { color: colors.textActive }]}>{t('back')}</Text>
         </TouchableOpacity>
       </View>
     )
@@ -69,14 +73,26 @@ export default function DestinationDetail() {
             style={[
               styles.addBtn,
               { 
-                backgroundColor: colors.accentPrimaryGlass,
-                shadowColor: colors.accentPrimary
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderColor: 'rgba(255, 255, 255, 0.25)',
+                shadowColor: '#ffffff',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.12,
+                shadowRadius: 6,
+                elevation: 2,
+                overflow: 'hidden',
               }
             ]}
-            onPress={() => router.push('/create')}
+            onPress={() => router.push({ pathname: '/create', params: { destId: destination.id } })}
           >
+            <BlurView
+              intensity={Platform.OS === 'android' ? 20 : 35}
+              tint="dark"
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={[styles.innerHighlight, { borderRadius: 20, borderColor: 'rgba(255, 255, 255, 0.45)' }]} />
             <Plus size={14} color="#ffffff" />
-            <Text style={styles.addBtnText}>Moment</Text>
+            <Text style={styles.addBtnText}>{t('addMomentHeader')}</Text>
           </TouchableOpacity>
           
           {/* Nút sửa địa điểm */}
@@ -102,7 +118,9 @@ export default function DestinationDetail() {
             <Text style={[styles.descText, { color: colors.textSubtle }]}>{destination.description}</Text>
           ) : null}
           <Text style={[styles.momentCountText, { color: colors.textMuted }]}>
-            {moments.length} khoảnh khắc được ghi lại
+            {locale === 'vi'
+              ? `${moments.length} khoảnh khắc được ghi lại`
+              : `${moments.length} captured moments`}
           </Text>
         </View>
 
@@ -110,27 +128,42 @@ export default function DestinationDetail() {
         <View style={styles.timelineSection}>
           {moments.length === 0 ? (
             <View style={styles.emptyMoments}>
-              <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Chưa có khoảnh khắc nào</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textActive }]}>{t('emptyMoments')}</Text>
               <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
-                Hãy tạo moment đầu tiên cho {destination.name}!
+                {locale === 'vi'
+                  ? `Hãy tạo moment đầu tiên cho ${destination.name}!`
+                  : `Create the first moment for ${destination.name}!`}
               </Text>
               <TouchableOpacity
                 style={[
                   styles.createMomentBtn,
                   { 
-                    backgroundColor: colors.accentPrimaryGlass 
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
+                    shadowColor: isDark ? '#ffffff' : '#000000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0.12 : 0.06,
+                    shadowRadius: 6,
+                    elevation: 2,
+                    overflow: 'hidden',
                   }
                 ]}
-                onPress={() => router.push('/create')}
+                onPress={() => router.push({ pathname: '/create', params: { destId: destination.id } })}
               >
-                <Plus size={14} color="#ffffff" />
-                <Text style={styles.createMomentBtnText}>Tạo Moment</Text>
+                <BlurView
+                  intensity={Platform.OS === 'android' ? 20 : 35}
+                  tint={colors.blurTint}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View style={[styles.innerHighlight, { borderRadius: 10, borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
+                <Plus size={14} color={colors.textActive} />
+                <Text style={[styles.createMomentBtnText, { color: colors.textActive }]}>{t('createMomentBtn')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
               <Text style={[styles.sectionTitle, { color: colors.textActive }]}>
-                Moments timeline ({moments.length})
+                {t('momentsTimeline', { count: moments.length })}
               </Text>
               {moments.map((moment, idx) => (
                 <View key={moment.id} style={styles.timelineItem}>
@@ -141,46 +174,7 @@ export default function DestinationDetail() {
                   </View>
 
                   {/* Right content card */}
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={[styles.momentCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]}
-                    onPress={() => router.push(`/edit-moment/${moment.id}`)}
-                  >
-                    <Image source={{ uri: moment.image_url }} style={styles.momentImage} />
-                    <View style={styles.momentBody}>
-                      <View style={styles.momentHeaderRow}>
-                        <Text style={[styles.momentTitle, { color: colors.textActive }]}>{moment.title}</Text>
-                        <View
-                          style={[styles.momentEditBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}
-                        >
-                          <Edit3 size={14} color={colors.textInactive} />
-                        </View>
-                      </View>
-                      {moment.description ? (
-                        <Text style={[styles.momentDesc, { color: colors.textSubtle }]} numberOfLines={2}>
-                          {moment.description}
-                        </Text>
-                      ) : null}
-
-                      {/* Metadata Row */}
-                      <View style={styles.metaRow}>
-                        <View style={styles.metaItem}>
-                          <MapPin size={12} color={colors.textMuted} />
-                          <Text style={[styles.metaText, { color: colors.textMuted }]}>{moment.location}</Text>
-                        </View>
-                        <View style={styles.metaItem}>
-                          <Calendar size={12} color={colors.textMuted} />
-                          <Text style={[styles.metaText, { color: colors.textMuted }]}>{moment.date}</Text>
-                        </View>
-                        <View style={[styles.metaItem, { marginLeft: 'auto' }]}>
-                          <Heart size={12} color={colors.accentRed} />
-                          <Text style={[styles.metaText, { color: colors.accentRed }]}>
-                            {moment.likes}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                  <TimelineMomentCard moment={moment} colors={colors} theme={theme} router={router} />
                 </View>
               ))}
             </>
@@ -188,6 +182,102 @@ export default function DestinationDetail() {
         </View>
       </ScrollView>
     </View>
+  )
+}
+
+function TimelineMomentCard({ moment, colors, theme, router }: { moment: any, colors: any, theme: string, router: any }) {
+  const images = parseImageUrls(moment.image_url)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [cardWidth, setCardWidth] = useState(300) // fallback
+
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / cardWidth)
+    setActiveIndex(index)
+  }
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      style={[styles.momentCard, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]}
+      onLayout={(e) => {
+        const { width } = e.nativeEvent.layout
+        if (width > 0) setCardWidth(width)
+      }}
+      onPress={() => router.push(`/moment/${moment.id}`)}
+    >
+      {images.length > 0 ? (
+        <View style={[styles.carouselContainer, { width: cardWidth }]}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            style={styles.momentImageScroll}
+          >
+            {images.map((img: string, idx: number) => (
+              <Image key={idx} source={{ uri: img }} style={{ width: cardWidth, height: 160, resizeMode: 'cover' }} />
+            ))}
+          </ScrollView>
+
+          {/* Dots Indicator */}
+          {images.length > 1 && (
+            <View style={styles.indicatorContainer}>
+              {images.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    styles.indicatorDot,
+                    activeIndex === idx
+                      ? { backgroundColor: '#ffffff', width: 14 }
+                      : { backgroundColor: 'rgba(255, 255, 255, 0.4)' },
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      ) : (
+        <View style={styles.momentImagePlaceholder}>
+          <Camera size={32} color={colors.textInactive} />
+        </View>
+      )}
+
+      <View style={styles.momentBody}>
+        <View style={styles.momentHeaderRow}>
+          <Text style={[styles.momentTitle, { color: colors.textActive }]}>{moment.title}</Text>
+          <View
+            style={[styles.momentEditBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}
+          >
+            <Edit3 size={14} color={colors.textInactive} />
+          </View>
+        </View>
+        {moment.description ? (
+          <Text style={[styles.momentDesc, { color: colors.textSubtle }]} numberOfLines={2}>
+            {moment.description}
+          </Text>
+        ) : null}
+
+        {/* Metadata Row */}
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <MapPin size={12} color={colors.textMuted} />
+            <Text style={[styles.metaText, { color: colors.textMuted }]}>{moment.location}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Calendar size={12} color={colors.textMuted} />
+            <Text style={[styles.metaText, { color: colors.textMuted }]}>{moment.date}</Text>
+          </View>
+          <View style={[styles.metaItem, { marginLeft: 'auto' }]}>
+            <Heart size={12} color={colors.accentRed} />
+            <Text style={[styles.metaText, { color: colors.accentRed }]}>
+              {moment.likes}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
   )
 }
 
@@ -259,10 +349,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 1.2,
+    opacity: 0.8,
   },
   addBtnText: {
     fontFamily: 'System',
@@ -330,7 +425,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   createMomentBtnText: {
     fontFamily: 'System',
@@ -366,9 +460,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 20,
   },
-  momentImage: {
-    width: '100%',
+  carouselContainer: {
     height: 160,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  momentImageScroll: {
+    flex: 1,
+  },
+  indicatorContainer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  indicatorDot: {
+    height: 6,
+    borderRadius: 3,
+    width: 6,
+  },
+  momentImagePlaceholder: {
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.05)',
   },
   momentBody: {

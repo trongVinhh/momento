@@ -86,11 +86,29 @@ export default function LoginScreen() {
 
               {/* Submit Button */}
               <TouchableOpacity
-                style={styles.submitButton}
+                style={[
+                  styles.submitButton,
+                  {
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    borderColor: 'rgba(255, 255, 255, 0.25)',
+                    shadowColor: '#ffffff',
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.12,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }
+                ]}
                 activeOpacity={0.8}
                 onPress={handleAuth}
                 disabled={loading}
               >
+                <BlurView
+                  intensity={Platform.OS === 'android' ? 20 : 35}
+                  tint="light"
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View style={[styles.innerHighlight, { borderColor: 'rgba(255, 255, 255, 0.45)' }]} />
+
                 {loading ? (
                   <ActivityIndicator color={COLORS.white} />
                 ) : (
@@ -100,7 +118,7 @@ export default function LoginScreen() {
                     ) : (
                       <LogIn size={18} color={COLORS.white} />
                     )}
-                    <Text style={styles.submitBtnText}>
+                    <Text style={[styles.submitBtnText, { color: COLORS.white }]}>
                       {isSignUp ? 'Đăng Ký' : 'Đăng Nhập'}
                     </Text>
                   </View>
@@ -195,18 +213,23 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
   },
   submitButton: {
-    backgroundColor: COLORS.accentPrimaryGlass,
     borderRadius: 12,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: COLORS.accentPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    opacity: 0.8,
   },
   btnContent: {
     flexDirection: 'row',

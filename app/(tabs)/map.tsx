@@ -18,6 +18,7 @@ import Svg, { Path } from 'react-native-svg'
 import { useDestinations } from '../../hooks/useDestinations'
 import { useTheme } from '../../hooks/useTheme'
 import { globalStyles } from '../../styles/globalStyles'
+import { useTranslation } from '../../context/LanguageContext'
 
 // Giao diện bản đồ tối (Dark Mode Map Style JSON)
 const DARK_MAP_STYLE = [
@@ -41,6 +42,7 @@ export default function MapTab() {
   const router = useRouter()
   const { destinations, loading, error, refetch } = useDestinations()
   const { colors, theme, isDark } = useTheme()
+  const { t, locale } = useTranslation()
 
   // 1. Chỉ lấy những địa điểm có tọa độ hợp lệ
   const validDestinations = useMemo(() => {
@@ -63,7 +65,7 @@ export default function MapTab() {
         tint={colors.blurTint}
         style={[globalStyles.headerBase, { paddingTop: insets.top + 12, zIndex: 10, borderBottomColor: colors.borderGlass }]}
       >
-        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>Moment maps</Text>
+        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>{t('mapTitle')}</Text>
         <TouchableOpacity style={styles.headerButton} onPress={refetch}>
           <Compass size={22} color={colors.textInactive} />
         </TouchableOpacity>
@@ -73,7 +75,9 @@ export default function MapTab() {
       {loading && validDestinations.length === 0 && (
         <View style={[styles.centerState, { backgroundColor: colors.background }]}>
           <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
-          <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải bản đồ hành trình...</Text>
+          <Text style={[styles.stateText, { color: colors.textInactive }]}>
+            {locale === 'vi' ? 'Đang tải bản đồ hành trình...' : 'Loading journey map...'}
+          </Text>
         </View>
       )}
 
@@ -82,7 +86,7 @@ export default function MapTab() {
         <View style={[styles.centerState, { backgroundColor: colors.background }]}>
           <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
           <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
-            <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
+            <Text style={[styles.retryText, { color: colors.textActive }]}>{locale === 'vi' ? 'Thử lại' : 'Retry'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -147,7 +151,7 @@ export default function MapTab() {
                     <View style={styles.calloutStats}>
                       <Pin size={11} color="#ef4444" />
                       <Text style={[styles.calloutMomentsText, { color: colors.textSubtle }]}>
-                        {dest.moments_count ?? 0} khoảnh khắc
+                        {dest.moments_count ?? 0} {locale === 'vi' ? 'khoảnh khắc' : 'moments'}
                       </Text>
                     </View>
                   </View>

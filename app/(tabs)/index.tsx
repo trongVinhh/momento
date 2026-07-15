@@ -20,6 +20,7 @@ import { useStaggeredEntrance } from '../../hooks/useStaggeredEntrance'
 import { globalStyles } from '../../styles/globalStyles'
 import { useDestinations } from '../../hooks/useDestinations'
 import { useTheme } from '../../hooks/useTheme'
+import { useTranslation } from '../../context/LanguageContext'
 
 const MAX_ANIM = 20
 const STAGGER_DELAYS = Array.from({ length: MAX_ANIM }, (_, i) => i * 120 + 150)
@@ -30,9 +31,14 @@ export default function TripsTab() {
   const { destinations, loading, error, refetch } = useDestinations()
   const animValues = useStaggeredEntrance(MAX_ANIM, STAGGER_DELAYS)
   const { colors, theme, isDark } = useTheme()
+  const { t, locale } = useTranslation()
 
   const [selectedCountry, setSelectedCountry] = useState('Tất cả')
   const [dropdownOpen, setDropdownOpen] = useState(false)
+
+  const translateCountry = (c: string) => {
+    return c === 'Tất cả' ? (locale === 'vi' ? 'Tất cả' : 'All') : c
+  }
 
   // 1. Trích xuất danh sách Quốc gia duy nhất
   const countries = useMemo(() => {
@@ -66,7 +72,7 @@ export default function TripsTab() {
         {loading && (
           <View style={styles.centerState}>
             <ActivityIndicator size="large" color={theme === 'light' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.5)'} />
-            <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải địa điểm...</Text>
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>{t('loading')}</Text>
           </View>
         )}
 
@@ -75,7 +81,7 @@ export default function TripsTab() {
           <View style={styles.centerState}>
             <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
             <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
-              <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
+              <Text style={[styles.retryText, { color: colors.textActive }]}>{locale === 'vi' ? 'Thử lại' : 'Retry'}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -86,24 +92,35 @@ export default function TripsTab() {
             <View style={[styles.emptyIconBg, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}>
               <MapPin size={32} color={colors.textInactive} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Chưa có địa điểm nào</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>{t('emptyDestinations')}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
-              Bắt đầu hành trình của bạn bằng cách tạo địa điểm đầu tiên!
+              {t('emptyDestinationsSub')}
             </Text>
             <TouchableOpacity
               style={[
                 styles.createFirstBtn,
                 { 
-                  backgroundColor: colors.accentPrimaryGlass,
-                  borderColor: colors.borderGlass,
-                  shadowColor: colors.accentPrimary
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
+                  shadowColor: isDark ? '#ffffff' : '#000000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isDark ? 0.12 : 0.06,
+                  shadowRadius: 6,
+                  elevation: 2,
+                  overflow: 'hidden',
                 }
               ]}
               activeOpacity={0.8}
               onPress={() => router.push('/create-destination')}
             >
-              <Plus size={16} color="#ffffff" />
-              <Text style={styles.createFirstBtnText}>Tạo địa điểm đầu tiên</Text>
+              <BlurView
+                intensity={Platform.OS === 'android' ? 20 : 35}
+                tint={colors.blurTint}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={[styles.innerHighlight, { borderRadius: 12, borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
+              <Plus size={16} color={colors.textActive} />
+              <Text style={[styles.createFirstBtnText, { color: colors.textActive }]}>{t('addDestination')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -114,9 +131,13 @@ export default function TripsTab() {
             <View style={[styles.emptyIconBg, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}>
               <MapPin size={32} color={colors.textInactive} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Không có địa điểm phù hợp</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>
+              {locale === 'vi' ? 'Không có địa điểm phù hợp' : 'No destinations match this country'}
+            </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
-              Bạn chưa tạo hành trình nào ở quốc gia "{selectedCountry}"
+              {locale === 'vi'
+                ? `Bạn chưa tạo hành trình nào ở quốc gia "${selectedCountry}"`
+                : `You haven't created any trips in "${selectedCountry}"`}
             </Text>
           </View>
         )}
@@ -142,7 +163,7 @@ export default function TripsTab() {
       >
         <View style={styles.headerTitleRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.headerTitle, { color: colors.textActive }]}>Trips</Text>
+            <Text style={[styles.headerTitle, { color: colors.textActive }]}>{t('tabHome')}</Text>
             {!loading && countries.length > 1 && (
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -156,7 +177,7 @@ export default function TripsTab() {
                 ]}
               >
                 <Text style={[styles.countryDropdownText, { color: colors.textSubtle }]}>
-                  {selectedCountry}
+                  {translateCountry(selectedCountry)}
                 </Text>
                 <ChevronDown size={14} color={colors.textInactive} />
               </TouchableOpacity>
@@ -207,7 +228,7 @@ export default function TripsTab() {
                       fontWeight: selectedCountry === country ? '700' : '400'
                     }
                   ]}>
-                    {country}
+                    {translateCountry(country)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -351,9 +372,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 1.2,
+    opacity: 0.8,
   },
   createFirstBtnText: {
     fontFamily: 'System',

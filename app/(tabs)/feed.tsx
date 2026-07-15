@@ -17,12 +17,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { globalStyles } from '../../styles/globalStyles'
 import { useFeed } from '../../hooks/useFeed'
 import { useTheme } from '../../hooks/useTheme'
+import { parseImageUrls } from '../../utils/imageParser'
+import { useTranslation } from '../../context/LanguageContext'
 
 export default function FeedTab() {
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 56
   const { feed, loading, error, refetch } = useFeed()
   const { colors, theme } = useTheme()
+  const { t, locale } = useTranslation()
   const [refreshing, setRefreshing] = useState(false)
 
   const onRefresh = async () => {
@@ -39,7 +42,7 @@ export default function FeedTab() {
         tint={colors.blurTint}
         style={[globalStyles.headerBase, { paddingTop: insets.top + 12, borderBottomColor: colors.borderGlass }]}
       >
-        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>Moments Feed</Text>
+        <Text style={[globalStyles.headerTitle, { color: colors.textActive }]}>{t('feedTitle')}</Text>
         <TouchableOpacity style={styles.headerButton} onPress={() => refetch()}>
           <Compass size={22} color={colors.textInactive} />
         </TouchableOpacity>
@@ -65,7 +68,7 @@ export default function FeedTab() {
         {loading && !refreshing && feed.length === 0 && (
           <View style={styles.centerState}>
             <ActivityIndicator size="large" color={theme === 'light' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)'} />
-            <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải bản tin...</Text>
+            <Text style={[styles.stateText, { color: colors.textInactive }]}>{t('loadingFeed')}</Text>
           </View>
         )}
 
@@ -74,7 +77,7 @@ export default function FeedTab() {
           <View style={styles.centerState}>
             <Text style={[styles.stateText, { color: colors.textInactive }]}>{error}</Text>
             <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.cardBackground, borderColor: colors.borderGlass }]} onPress={refetch}>
-              <Text style={[styles.retryText, { color: colors.textActive }]}>Thử lại</Text>
+              <Text style={[styles.retryText, { color: colors.textActive }]}>{locale === 'vi' ? 'Thử lại' : 'Retry'}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -85,9 +88,9 @@ export default function FeedTab() {
             <View style={[styles.emptyIconBg, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}>
               <FileText size={32} color={colors.textInactive} />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>Bản tin trống</Text>
+            <Text style={[styles.emptyTitle, { color: colors.textActive }]}>{t('emptyFeed')}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.textInactive }]}>
-              Chưa có khoảnh khắc nào được đăng tải. Hãy ghi lại hành trình đầu tiên của bạn!
+              {t('emptyFeedSub')}
             </Text>
           </View>
         )}
@@ -107,8 +110,8 @@ export default function FeedTab() {
               <Text style={[styles.timeText, { color: colors.textMuted }]}>{post.date}</Text>
             </View>
 
-            {/* Post Image */}
-            <Image source={{ uri: post.imageUrl }} style={styles.postImage} />
+            {/* Post Image (Carousel Slide) */}
+            <FeedPostImageCarousel imageUrls={parseImageUrls(post.imageUrl)} />
 
             {/* Actions */}
             <View style={styles.actionRow}>
@@ -138,6 +141,59 @@ export default function FeedTab() {
           </View>
         ))}
       </ScrollView>
+    </View>
+  )
+}
+
+function FeedPostImageCarousel({ imageUrls }: { imageUrls: string[] }) {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [carouselWidth, setCarouselWidth] = useState(300)
+
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x
+    const index = Math.round(scrollPosition / carouselWidth)
+    setActiveIndex(index)
+  }
+
+  if (imageUrls.length === 0) return null
+
+  return (
+    <View 
+      style={[styles.postCarouselContainer, { width: '100%' }]}
+      onLayout={(e) => {
+        const { width } = e.nativeEvent.layout
+        if (width > 0) setCarouselWidth(width)
+      }}
+    >
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        style={styles.postImageScroll}
+      >
+        {imageUrls.map((img: string, idx: number) => (
+          <Image key={idx} source={{ uri: img }} style={{ width: carouselWidth, height: 300, resizeMode: 'cover' }} />
+        ))}
+      </ScrollView>
+
+      {/* Dots Indicator */}
+      {imageUrls.length > 1 && (
+        <View style={styles.indicatorContainer}>
+          {imageUrls.map((_, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.indicatorDot,
+                activeIndex === idx
+                  ? { backgroundColor: '#ffffff', width: 14 }
+                  : { backgroundColor: 'rgba(255, 255, 255, 0.4)' },
+              ]}
+            />
+          ))}
+        </View>
+      )}
     </View>
   )
 }
@@ -180,10 +236,29 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 11,
   },
-  postImage: {
-    width: '100%',
+  postCarouselContainer: {
     height: 300,
+    overflow: 'hidden',
+    position: 'relative',
     backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  postImageScroll: {
+    flex: 1,
+  },
+  indicatorContainer: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  indicatorDot: {
+    height: 6,
+    borderRadius: 3,
+    width: 6,
   },
   actionRow: {
     flexDirection: 'row',

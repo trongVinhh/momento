@@ -7,15 +7,21 @@ import type { DestinationRow } from '../constants/mockData'
 
 const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'https://your-cloudflare-worker.workers.dev'
 
-export function useCreateMoment() {
+export function useCreateMoment(initialDestId?: string) {
   const router = useRouter()
   const navigation = useNavigation()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [locationName, setLocationName] = useState('')
-  const [selectedDestId, setSelectedDestId] = useState<string | null>(null)
-  const [imageUri, setImageUri] = useState<string | null>(null)
+  const [selectedDestId, setSelectedDestId] = useState<string | null>(initialDestId || null)
+  const [imageUris, setImageUris] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (initialDestId) {
+      setSelectedDestId(initialDestId)
+    }
+  }, [initialDestId])
 
   // Danh sách destinations động từ Supabase
   const [destinations, setDestinations] = useState<DestinationRow[]>([])
@@ -58,16 +64,32 @@ export function useCreateMoment() {
       return
     }
 
+    if (imageUris.length >= 10) {
+      Alert.alert('Giới hạn', 'Bạn chỉ có thể chọn tối đa 10 ảnh cho mỗi khoảnh khắc.')
+      return
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsMultipleSelection: true,
       quality: 0.8,
     })
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri)
+      const selectedUris = result.assets.map(a => a.uri)
+      const totalUris = [...imageUris, ...selectedUris]
+      if (totalUris.length > 10) {
+        Alert.alert('Giới hạn', 'Đã tự động cắt bớt hình ảnh. Chỉ cho phép tối đa 10 ảnh.')
+        setImageUris(totalUris.slice(0, 10))
+      } else {
+        setImageUris(totalUris)
+      }
     }
+  }
+
+  // Xóa bớt ảnh đã chọn
+  const removeImage = (index: number) => {
+    setImageUris(prev => prev.filter((_, idx) => idx !== index))
   }
 
   // 2. Upload ảnh lên Cloudflare R2 qua Worker Presigned URL
@@ -110,7 +132,7 @@ export function useCreateMoment() {
 
   // 3. Đăng khoảnh khắc mới
   const handleSaveMoment = async () => {
-    if (!title || !locationName || !imageUri || !selectedDestId) {
+    if (imageUris.length === 0 || !title || !locationName || !selectedDestId) {
       Alert.alert('Thiếu thông tin', 'Vui lòng chọn ảnh, nhập tiêu đề, địa danh và chọn địa điểm.')
       return
     }
@@ -118,10 +140,13 @@ export function useCreateMoment() {
     setLoading(true)
 
     try {
-      let imageUrl = imageUri
-      if (!imageUri.startsWith('http')) {
-        imageUrl = await uploadImageToR2(imageUri)
-      }
+      // Tải lên song song tất cả các ảnh mới
+      const uploadedUrls = await Promise.all(
+        imageUris.map(async (uri) => {
+          if (uri.startsWith('http')) return uri
+          return await uploadImageToR2(uri)
+        })
+      )
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Không tìm thấy tài khoản người dùng.')
@@ -131,7 +156,7 @@ export function useCreateMoment() {
         description,
         location: locationName,
         destination_id: selectedDestId,
-        image_url: imageUrl,
+        image_url: JSON.stringify(uploadedUrls),
         user_id: user.id,
         likes: 0,
         date: new Date().toLocaleDateString('vi-VN'),
@@ -160,8 +185,9 @@ export function useCreateMoment() {
     setSelectedDestId,
     destinations,
     loadingDestinations,
-    imageUri,
+    imageUris,
     pickImage,
+    removeImage,
     loading,
     handleSaveMoment,
   }

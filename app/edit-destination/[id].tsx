@@ -22,6 +22,7 @@ import { useTheme } from '../../hooks/useTheme'
 import { useEditDestination } from '../../hooks/useEditDestination'
 import { globalStyles } from '../../styles/globalStyles'
 import { POPULAR_COUNTRIES } from '../../constants/mockData'
+import { useTranslation } from '../../context/LanguageContext'
 
 export default function EditDestinationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -29,6 +30,7 @@ export default function EditDestinationScreen() {
   const router = useRouter()
   const [pickerVisible, setPickerVisible] = useState(false)
   const { colors, theme, isDark } = useTheme()
+  const { t, locale } = useTranslation()
 
   const {
     name,
@@ -49,7 +51,9 @@ export default function EditDestinationScreen() {
     return (
       <View style={[globalStyles.container, styles.centerState, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
-        <Text style={[styles.stateText, { color: colors.textInactive }]}>Đang tải địa điểm...</Text>
+        <Text style={[styles.stateText, { color: colors.textInactive }]}>
+          {locale === 'vi' ? 'Đang tải địa điểm...' : 'Loading destination details...'}
+        </Text>
       </View>
     )
   }
@@ -67,7 +71,7 @@ export default function EditDestinationScreen() {
         <TouchableOpacity style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]} onPress={() => router.back()}>
           <ArrowLeft size={20} color={colors.textActive} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textActive }]}>Sửa Địa Điểm</Text>
+        <Text style={[styles.headerTitle, { color: colors.textActive }]}>{t('editDestTitle')}</Text>
         <TouchableOpacity style={[styles.glassRoundBtn, styles.deleteHeaderBtn, { backgroundColor: theme === 'light' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.25)' }]} onPress={handleDeleteDestination}>
           <Trash2 size={18} color="#ef4444" />
         </TouchableOpacity>
@@ -96,7 +100,9 @@ export default function EditDestinationScreen() {
             ) : (
               <View style={styles.placeholderContent}>
                 <Camera size={32} color={colors.textInactive} />
-                <Text style={[styles.placeholderText, { color: colors.textInactive }]}>Chọn ảnh bìa mới</Text>
+                <Text style={[styles.placeholderText, { color: colors.textInactive }]}>
+                  {locale === 'vi' ? 'Chọn ảnh bìa mới' : 'Select new cover image'}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -105,11 +111,11 @@ export default function EditDestinationScreen() {
           <View style={styles.form}>
             {/* Tên địa điểm */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textActive }]}>Tên địa điểm</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>{t('destNameLabel')}</Text>
               <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
                 <MapPin size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
-                  placeholder="Ví dụ: Đà Nẵng, Hội An, Huế..."
+                  placeholder={t('destNamePlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   value={name}
                   onChangeText={setName}
@@ -120,7 +126,7 @@ export default function EditDestinationScreen() {
 
             {/* Quốc gia (Chọn thay vì nhập tay) */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textActive }]}>Quốc gia</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>{t('countryLabel')}</Text>
               <TouchableOpacity
                 style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}
                 activeOpacity={0.8}
@@ -128,7 +134,7 @@ export default function EditDestinationScreen() {
               >
                 <Compass size={16} color={colors.textMuted} style={styles.icon} />
                 <Text style={[styles.inputText, { color: country ? colors.textActive : colors.textMuted }]}>
-                  {country || 'Chọn quốc gia...'}
+                  {country || t('countryPlaceholder')}
                 </Text>
                 <ChevronDown size={16} color={colors.textInactive} style={styles.rightIcon} />
               </TouchableOpacity>
@@ -152,7 +158,9 @@ export default function EditDestinationScreen() {
                   style={[styles.modalContent, { backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(20, 20, 25, 0.92)', borderColor: colors.borderGlass }]}
                 >
                   <View style={[styles.modalInnerBorder, { borderColor: colors.borderGlass }]} />
-                  <Text style={[styles.modalTitle, { color: colors.textActive }]}>Chọn Quốc Gia</Text>
+                  <Text style={[styles.modalTitle, { color: colors.textActive }]}>
+                    {locale === 'vi' ? 'Chọn Quốc Gia' : 'Select Country'}
+                  </Text>
                   
                   <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
                     {POPULAR_COUNTRIES.map((item) => (
@@ -189,11 +197,11 @@ export default function EditDestinationScreen() {
 
             {/* Mô tả */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textActive }]}>Mô tả</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>{t('descriptionLabel')}</Text>
               <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
                 <FileText size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
-                  placeholder="Cảm nhận của bạn về địa điểm này..."
+                  placeholder={t('descriptionPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   value={description}
                   onChangeText={setDescription}
@@ -208,21 +216,32 @@ export default function EditDestinationScreen() {
                 style={[
                   styles.submitBtn,
                   { 
-                    backgroundColor: colors.accentPrimaryGlass,
-                    borderColor: colors.borderGlass,
-                    shadowColor: colors.accentPrimary
+                    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
+                    shadowColor: isDark ? '#ffffff' : '#000000',
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: isDark ? 0.12 : 0.06,
+                    shadowRadius: 8,
+                    elevation: 2,
                   }
                 ]}
                 activeOpacity={0.8}
                 onPress={handleUpdateDestination}
                 disabled={loading}
               >
+                <BlurView
+                  intensity={Platform.OS === 'android' ? 20 : 35}
+                  tint={colors.blurTint}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View style={[styles.innerHighlight, { borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
+                
                 {loading ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <ActivityIndicator color={colors.textActive} />
                 ) : (
                   <View style={styles.btnContent}>
-                    <Check size={18} color="#ffffff" />
-                    <Text style={[styles.submitBtnText, { color: '#ffffff' }]}>Cập Nhật Địa Điểm</Text>
+                    <Check size={18} color={colors.textActive} />
+                    <Text style={[styles.submitBtnText, { color: colors.textActive }]}>{t('updateDestBtn')}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -241,7 +260,7 @@ export default function EditDestinationScreen() {
               >
                 <View style={styles.btnContent}>
                   <Trash2 size={18} color="#ef4444" />
-                  <Text style={styles.deleteBtnText}>Xóa Địa Điểm này</Text>
+                  <Text style={styles.deleteBtnText}>{t('deleteDestBtn')}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -348,17 +367,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   submitBtn: {
-    backgroundColor: 'rgba(59, 130, 246, 0.75)',
     borderRadius: 12,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    opacity: 0.8,
   },
   btnContent: {
     flexDirection: 'row',

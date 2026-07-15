@@ -12,20 +12,23 @@ import {
   Platform,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { Camera, MapPin, Type, Send, ArrowLeft, Plus } from 'lucide-react-native'
+import { Camera, MapPin, Type, Send, ArrowLeft, Plus, X } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCreateMoment } from '../hooks/useCreateMoment'
 import { COLORS, GLASS_STYLES } from '../constants/theme'
 import { useTheme } from '../hooks/useTheme'
 import { globalStyles } from '../styles/globalStyles'
+import { useTranslation } from '../context/LanguageContext'
 
 export default function CreateMomentScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { destId } = useLocalSearchParams<{ destId?: string }>()
   const { colors, theme, isDark } = useTheme()
+  const { t, locale } = useTranslation()
 
   const {
     title,
@@ -38,11 +41,12 @@ export default function CreateMomentScreen() {
     setSelectedDestId,
     destinations,
     loadingDestinations,
-    imageUri,
+    imageUris,
     pickImage,
+    removeImage,
     loading,
     handleSaveMoment,
-  } = useCreateMoment()
+  } = useCreateMoment(destId)
 
   return (
     <View style={[globalStyles.container, { backgroundColor: colors.background }]}>
@@ -57,7 +61,7 @@ export default function CreateMomentScreen() {
         <TouchableOpacity style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]} onPress={() => router.back()}>
           <ArrowLeft size={20} color={colors.textActive} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textActive }]}>New Moment</Text>
+        <Text style={[styles.headerTitle, { color: colors.textActive }]}>{t('newMomentTitle')}</Text>
         <View style={{ width: 40 }} />
       </BlurView>
 
@@ -70,31 +74,78 @@ export default function CreateMomentScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 76, paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
         >
-          {/* Image Upload Area */}
-          <TouchableOpacity
-            style={[styles.imagePlaceholder, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)', borderColor: colors.borderGlass }]}
-            activeOpacity={0.8}
-            onPress={pickImage}
-          >
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.previewImage} />
-            ) : (
-              <View style={styles.placeholderContent}>
-                <Camera size={32} color={colors.textInactive} />
-                <Text style={[styles.placeholderText, { color: colors.textInactive }]}>Chọn ảnh từ thư viện điện thoại</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          {/* Ảnh khoảnh khắc (Nhiều ảnh dạng Slide / List cuộn ngang) */}
+          <View style={styles.imageSectionContainer}>
+            <Text style={[styles.label, { color: colors.textActive, marginBottom: 8 }]}>{t('momentImagesLabel')}</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.imageScrollContent}
+            >
+              {/* Nút thêm ảnh */}
+              {imageUris.length > 0 && imageUris.length < 10 && (
+                <TouchableOpacity
+                  style={[
+                    styles.addImageSquare,
+                    { 
+                      backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)',
+                      borderColor: colors.borderGlass 
+                    }
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={pickImage}
+                >
+                  <Camera size={24} color={colors.textInactive} />
+                  <Text style={[styles.addImageText, { color: colors.textInactive }]}>{t('addPhoto')}</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Danh sách ảnh đã chọn */}
+              {imageUris.map((uri, index) => (
+                <View key={index} style={[styles.imageWrapper, { borderColor: colors.borderGlass }]}>
+                  <Image source={{ uri }} style={styles.thumbnailImage} />
+                  <TouchableOpacity
+                    style={styles.removeImageBadge}
+                    activeOpacity={0.7}
+                    onPress={() => removeImage(index)}
+                  >
+                    <X size={12} color="#ffffff" />
+                  </TouchableOpacity>
+                  <View style={styles.indexBadge}>
+                    <Text style={styles.indexBadgeText}>{index + 1}</Text>
+                  </View>
+                </View>
+              ))}
+
+              {/* Trạng thái trống */}
+              {imageUris.length === 0 && (
+                <TouchableOpacity
+                  style={[
+                    styles.imagePlaceholderEmpty,
+                    { 
+                      backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.03)',
+                      borderColor: colors.borderGlass 
+                    }
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={pickImage}
+                >
+                  <Camera size={32} color={colors.textInactive} style={{ marginBottom: 6 }} />
+                  <Text style={[styles.placeholderText, { color: colors.textInactive }]}>{t('momentImagesPlaceholder')}</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
 
           {/* Form Fields */}
           <View style={styles.form}>
             {/* Title */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textActive }]}>Tiêu đề khoảnh khắc</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>{t('momentTitleLabel')}</Text>
               <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
                 <Type size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
-                  placeholder="Ví dụ: Hoàng hôn rực rỡ ở đền thờ..."
+                  placeholder={t('momentTitlePlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   value={title}
                   onChangeText={setTitle}
@@ -106,7 +157,7 @@ export default function CreateMomentScreen() {
             {/* Destination Selector - Dynamic */}
             <View style={styles.inputGroup}>
               <View style={styles.labelRow}>
-                <Text style={[styles.label, { color: colors.textActive }]}>Chọn địa điểm</Text>
+                <Text style={[styles.label, { color: colors.textActive }]}>{t('selectDestLabel')}</Text>
                 <TouchableOpacity
                   style={[
                     styles.addDestBtn,
@@ -118,14 +169,14 @@ export default function CreateMomentScreen() {
                   onPress={() => router.push('/create-destination')}
                 >
                   <Plus size={12} color={colors.accentPrimary} />
-                  <Text style={[styles.addDestBtnText, { color: colors.accentPrimary }]}>Thêm mới</Text>
+                  <Text style={[styles.addDestBtnText, { color: colors.accentPrimary }]}>{locale === 'vi' ? 'Thêm mới' : 'Add new'}</Text>
                 </TouchableOpacity>
               </View>
 
               {loadingDestinations ? (
                 <View style={[styles.destLoading, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.04)', borderColor: colors.borderGlass }]}>
                   <ActivityIndicator size="small" color={colors.textInactive} />
-                  <Text style={[styles.destLoadingText, { color: colors.textMuted }]}>Đang tải địa điểm...</Text>
+                  <Text style={[styles.destLoadingText, { color: colors.textMuted }]}>{t('loadingDest')}</Text>
                 </View>
               ) : destinations.length === 0 ? (
                 <TouchableOpacity
@@ -134,7 +185,7 @@ export default function CreateMomentScreen() {
                 >
                   <Plus size={16} color={colors.textInactive} />
                   <Text style={[styles.noDestText, { color: colors.textInactive }]}>
-                    Chưa có địa điểm. Tạo địa điểm đầu tiên!
+                    {locale === 'vi' ? 'Chưa có địa điểm. Tạo địa điểm đầu tiên!' : 'No destinations. Create the first one!'}
                   </Text>
                 </TouchableOpacity>
               ) : (
@@ -173,11 +224,11 @@ export default function CreateMomentScreen() {
 
             {/* Specific Location Name */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textActive }]}>Địa danh cụ thể</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>{t('locationLabel')}</Text>
               <View style={[styles.inputWrapper, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255, 255, 255, 0.05)', borderColor: colors.borderGlass }]}>
                 <MapPin size={16} color={colors.textMuted} style={styles.icon} />
                 <TextInput
-                  placeholder="Ví dụ: Bãi biển Mỹ Khê hoặc Đền Linh Ứng"
+                  placeholder={t('locationPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   value={locationName}
                   onChangeText={setLocationName}
@@ -188,9 +239,9 @@ export default function CreateMomentScreen() {
 
             {/* Description / Story */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textActive }]}>Cảm nhận & Câu chuyện</Text>
+              <Text style={[styles.label, { color: colors.textActive }]}>{t('descriptionLabel')}</Text>
               <TextInput
-                placeholder="Bạn có cảm xúc hay câu chuyện thú vị nào muốn lưu lại tại đây không?"
+                placeholder={t('descriptionPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={4}
@@ -212,21 +263,32 @@ export default function CreateMomentScreen() {
               style={[
                 styles.submitBtn,
                 { 
-                  backgroundColor: colors.accentPrimaryGlass,
-                  borderColor: colors.borderGlass,
-                  shadowColor: colors.accentPrimary
+                  backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.05)',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)',
+                  shadowColor: isDark ? '#ffffff' : '#000000',
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: isDark ? 0.12 : 0.06,
+                  shadowRadius: 8,
+                  elevation: 2,
                 }
               ]}
               activeOpacity={0.8}
               onPress={handleSaveMoment}
               disabled={loading}
             >
+              <BlurView
+                intensity={Platform.OS === 'android' ? 20 : 35}
+                tint={colors.blurTint}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={[styles.innerHighlight, { borderColor: isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(255, 255, 255, 0.75)' }]} />
+              
               {loading ? (
-                <ActivityIndicator color="#ffffff" />
+                <ActivityIndicator color={colors.textActive} />
               ) : (
                 <View style={styles.btnContent}>
-                  <Send size={18} color="#ffffff" />
-                  <Text style={[styles.submitBtnText, { color: '#ffffff' }]}>Lưu Khoảnh Khắc</Text>
+                  <Send size={18} color={colors.textActive} />
+                  <Text style={[styles.submitBtnText, { color: colors.textActive }]}>{t('createMomentSubmit')}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -258,25 +320,77 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 20,
   },
-  imagePlaceholder: {
+  imageSectionContainer: {
     width: '100%',
-    height: 220,
-    borderRadius: 16,
+    gap: 8,
+  },
+  imageScrollContent: {
+    gap: 12,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  addImageSquare: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    overflow: 'hidden',
+    borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 4,
   },
-  previewImage: {
+  addImageText: {
+    fontFamily: 'System',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  imageWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  thumbnailImage: {
     width: '100%',
     height: '100%',
   },
-  placeholderContent: {
+  removeImageBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 32,
+    zIndex: 10,
+  },
+  indexBadge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  indexBadgeText: {
+    fontFamily: 'System',
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  imagePlaceholderEmpty: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   placeholderText: {
     fontFamily: 'System',
@@ -410,18 +524,23 @@ const styles = StyleSheet.create({
     minHeight: 100,
   },
   submitBtn: {
-    backgroundColor: 'rgba(59, 130, 246, 0.75)',
     borderRadius: 12,
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    overflow: 'hidden',
+  },
+  innerHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 12,
+    borderWidth: 1.2,
+    opacity: 0.8,
   },
   btnContent: {
     flexDirection: 'row',

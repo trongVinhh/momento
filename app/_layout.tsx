@@ -6,6 +6,7 @@ import { Session } from '@supabase/supabase-js'
 
 import { supabase } from '../lib/supabase'
 import { ThemeProvider, useThemeContext } from '../context/ThemeContext'
+import { LanguageProvider } from '../context/LanguageContext'
 
 function RootLayoutContent() {
   const [session, setSession] = useState<Session | null>(null)
@@ -134,9 +135,11 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <RootLayoutContent />
-    </ThemeProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <RootLayoutContent />
+      </ThemeProvider>
+    </LanguageProvider>
   )
 }
 
