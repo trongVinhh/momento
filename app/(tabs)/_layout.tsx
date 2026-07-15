@@ -3,7 +3,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router'
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Home, User, FileText } from 'lucide-react-native'
+import { Home, User, FileText, Map } from 'lucide-react-native'
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets()
@@ -14,6 +14,7 @@ export default function TabsLayout() {
   const getActiveTab = () => {
     if (pathname === '/feed') return 'feed'
     if (pathname === '/account') return 'account'
+    if (pathname === '/map') return 'map'
     return 'trips' // Mặc định là trips (pathname === '/' hoặc '/index')
   }
 
@@ -31,6 +32,7 @@ export default function TabsLayout() {
         }}
       >
         <Tabs.Screen name="index" />
+        <Tabs.Screen name="map" />
         <Tabs.Screen name="feed" />
         <Tabs.Screen name="account" />
       </Tabs>
@@ -43,6 +45,48 @@ export default function TabsLayout() {
           style={styles.navPill}
         >
           <View style={styles.navPillInnerBorder} />
+
+          {/* Trips (index) — Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => router.push('/')}
+          >
+            <FileText
+              size={20}
+              color={activeTab === 'trips' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
+            />
+            <Text
+              style={
+                activeTab === 'trips'
+                  ? styles.navLabelActive
+                  : styles.navLabelInactive
+              }
+            >
+              Trips
+            </Text>
+          </TouchableOpacity>
+
+          {/* Map — Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => router.push('/map')}
+          >
+            <Map
+              size={20}
+              color={activeTab === 'map' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
+            />
+            <Text
+              style={
+                activeTab === 'map'
+                  ? styles.navLabelActive
+                  : styles.navLabelInactive
+              }
+            >
+              Map
+            </Text>
+          </TouchableOpacity>
 
           {/* Feed — Tab */}
           <TouchableOpacity
@@ -85,27 +129,6 @@ export default function TabsLayout() {
               Account
             </Text>
           </TouchableOpacity>
-
-          {/* Trips (index) — Tab */}
-          <TouchableOpacity
-            style={styles.navItem}
-            activeOpacity={0.7}
-            onPress={() => router.push('/')}
-          >
-            <FileText
-              size={20}
-              color={activeTab === 'trips' ? '#ffffff' : 'rgba(255,255,255,0.5)'}
-            />
-            <Text
-              style={
-                activeTab === 'trips'
-                  ? styles.navLabelActive
-                  : styles.navLabelInactive
-              }
-            >
-              Trips
-            </Text>
-          </TouchableOpacity>
         </BlurView>
       </View>
     </View>
@@ -122,9 +145,9 @@ const styles = StyleSheet.create({
   },
   navPill: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 20,
     borderRadius: 999,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingVertical: 8,
     overflow: 'hidden',
   },

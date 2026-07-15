@@ -99,6 +99,28 @@ export function useEditDestination(id: string | undefined) {
 
     setLoading(true)
     try {
+      // 1. Geocoding thông qua OpenStreetMap Nominatim
+      let latitude = 21.028511 // Mặc định Hà Nội
+      let longitude = 105.804817
+
+      try {
+        const query = encodeURIComponent(`${name.trim()}, ${country.trim()}`)
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+          headers: {
+            'User-Agent': 'MomentoTravelApp/1.0',
+          },
+        })
+        if (response.ok) {
+          const geoData = await response.json()
+          if (geoData && geoData.length > 0) {
+            latitude = parseFloat(geoData[0].lat)
+            longitude = parseFloat(geoData[0].lon)
+          }
+        }
+      } catch (geoErr) {
+        console.warn('Không thể geocode địa điểm, dùng tọa độ mặc định (Hà Nội):', geoErr)
+      }
+
       let imageUrl = imageUri
       // Nếu là ảnh mới chọn từ máy (file:// hoặc ph://), upload lên R2
       if (!imageUri.startsWith('http')) {
@@ -111,6 +133,8 @@ export function useEditDestination(id: string | undefined) {
           name: name.trim(),
           description: description.trim() || null,
           country: country.trim(),
+          latitude,
+          longitude,
           image_url: imageUrl,
         })
         .eq('id', id)

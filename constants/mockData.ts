@@ -6,6 +6,8 @@ export interface DestinationRow {
   name: string
   description: string | null
   country: string
+  latitude?: number | null
+  longitude?: number | null
   image_url: string
   user_id: string
   moments_count?: number // Computed via join / count query

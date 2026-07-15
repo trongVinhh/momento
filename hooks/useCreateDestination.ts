@@ -72,15 +72,41 @@ export function useCreateDestination() {
 
     setLoading(true)
     try {
+      // 1. Geocoding thông qua OpenStreetMap Nominatim
+      let latitude = 21.028511 // Mặc định Hà Nội
+      let longitude = 105.804817
+
+      try {
+        const query = encodeURIComponent(`${name.trim()}, ${country.trim()}`)
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`, {
+          headers: {
+            'User-Agent': 'MomentoTravelApp/1.0', // Yêu cầu từ Nominatim
+          },
+        })
+        if (response.ok) {
+          const geoData = await response.json()
+          if (geoData && geoData.length > 0) {
+            latitude = parseFloat(geoData[0].lat)
+            longitude = parseFloat(geoData[0].lon)
+          }
+        }
+      } catch (geoErr) {
+        console.warn('Không thể geocode địa điểm, dùng tọa độ mặc định (Hà Nội):', geoErr)
+      }
+
+      // 2. Upload ảnh bìa lên R2
       const imageUrl = await uploadImageToR2(imageUri)
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Không tìm thấy tài khoản người dùng.')
 
+      // 3. Lưu vào cơ sở dữ liệu
       const { error } = await supabase.from('destinations').insert({
         name: name.trim(),
         description: description.trim() || null,
         country: country.trim(),
+        latitude,
+        longitude,
         image_url: imageUrl,
         user_id: user.id,
       })
