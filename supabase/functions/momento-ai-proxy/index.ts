@@ -51,43 +51,37 @@ You MUST respond strictly in the following JSON format:
   "reading": "If targetLang is Japanese, provide the complete Kana-only (Hiragana/Katakana) reading of the translation without any Kanji. For non-Japanese languages, set this to null."
 }`
 
-      const geminiKey = Deno.env.get('GEMINI_API_KEY')
-      if (!geminiKey) throw new Error("GEMINI_API_KEY is not configured")
-
       const geminiModel = "gemini-3.5-flash-lite"
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: systemPrompt }]
-            },
-            {
-              role: 'user',
-              parts: [{ text: `Vietnamese idea to translate: "${vietnamese_idea}"` }]
-            }
-          ],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                translation: { type: 'STRING', description: 'The translated text in the target language' },
-                reading: { type: 'STRING', nullable: true, description: 'The Hiragana/Kana reading (no Kanji) of the translation' }
+      const response = await fetchGeminiWithRotation((key) => {
+        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: systemPrompt }]
               },
-              required: ['translation', 'reading']
+              {
+                role: 'user',
+                parts: [{ text: `Vietnamese idea to translate: "${vietnamese_idea}"` }]
+              }
+            ],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: 'OBJECT',
+                properties: {
+                  translation: { type: 'STRING', description: 'The translated text in the target language' },
+                  reading: { type: 'STRING', nullable: true, description: 'The Hiragana/Kana reading (no Kanji) of the translation' }
+                },
+                required: ['translation', 'reading']
+              }
             }
-          }
+          })
         })
       })
-
-      if (!response.ok) {
-        const errText = await response.text()
-        throw new Error(`Gemini translation error: ${errText}`)
-      }
 
       const resJson = await response.json()
       const contentText = resJson.candidates?.[0]?.content?.parts?.[0]?.text
@@ -165,39 +159,19 @@ You MUST respond strictly in the following JSON format:
       userParts.push({ text: message || "" })
     }
 
-    const geminiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!geminiKey) {
-      return new Response(JSON.stringify({ error: "Gemini API key is not configured." }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
     let model = "gemini-3.5-flash-lite"
-    let geminiResponse = await callGeminiAPI(model, geminiKey, systemPrompt, geminiHistory, userParts)
+    let geminiResponse: Response
 
-    if (!geminiResponse.ok) {
-      const clonedResp = geminiResponse.clone()
-      const errJson = await clonedResp.json().catch(() => ({}))
-      const errMsg = errJson.error?.message || ""
-      const isQuotaError = geminiResponse.status === 429 ||
-        errMsg.toLowerCase().includes("quota") ||
-        errMsg.toLowerCase().includes("limit") ||
-        errMsg.toLowerCase().includes("exhausted")
-
-      if (isQuotaError) {
-        console.warn(`Model ${model} hit rate/quota limit. Falling back to gemini-1.5-flash...`)
-        model = "gemini-1.5-flash"
-        geminiResponse = await callGeminiAPI(model, geminiKey, systemPrompt, geminiHistory, userParts)
-      }
-    }
-
-    if (!geminiResponse.ok) {
-      const errText = await geminiResponse.text()
-      return new Response(JSON.stringify({ error: `Gemini API error (model ${model}): ${errText}` }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+    try {
+      geminiResponse = await fetchGeminiWithRotation((key) =>
+        callGeminiAPI(model, key, systemPrompt, geminiHistory, userParts)
+      )
+    } catch (err: any) {
+      console.warn(`All keys failed for model ${model}. Error: ${err.message}. Falling back to gemini-1.5-flash...`)
+      model = "gemini-1.5-flash"
+      geminiResponse = await fetchGeminiWithRotation((key) =>
+        callGeminiAPI(model, key, systemPrompt, geminiHistory, userParts)
+      )
     }
 
     const geminiData = await geminiResponse.json()
@@ -282,5 +256,47 @@ async function callGeminiAPI(model: string, key: string, systemPrompt: string, h
       }
     })
   })
+}
+
+function getGeminiKeys(): string[] {
+  const keysStr = Deno.env.get('GEMINI_API_KEYS') || Deno.env.get('GEMINI_API_KEY') || ''
+  return keysStr.split(',').map(k => k.trim()).filter(Boolean)
+}
+
+async function fetchGeminiWithRotation(
+  fn: (key: string) => Promise<Response>
+): Promise<Response> {
+  const keys = getGeminiKeys()
+  if (keys.length === 0) {
+    throw new Error("No Gemini API keys configured. Set GEMINI_API_KEY or GEMINI_API_KEYS environment variable.")
+  }
+
+  // Load balance by picking a random starting index
+  const startIndex = Math.floor(Math.random() * keys.length)
+  let lastError: any = null
+
+  for (let i = 0; i < keys.length; i++) {
+    const currentIndex = (startIndex + i) % keys.length
+    const key = keys[currentIndex]
+    
+    try {
+      console.log(`[Gemini Rotation] Trying API key index ${currentIndex} (${key.substring(0, 10)}...)`)
+      const response = await fn(key)
+      
+      if (response.ok) {
+        return response
+      }
+
+      const clonedResp = response.clone()
+      const errText = await clonedResp.text().catch(() => "")
+      console.warn(`[Gemini Rotation] API key index ${currentIndex} failed with status ${response.status}: ${errText.substring(0, 100)}`)
+      lastError = new Error(`API error (status ${response.status}) on key index ${currentIndex}: ${errText}`)
+    } catch (err: any) {
+      console.error(`[Gemini Rotation] Network/Fetch error on API key index ${currentIndex}:`, err)
+      lastError = err
+    }
+  }
+
+  throw lastError || new Error("All Gemini API keys failed.")
 }
 

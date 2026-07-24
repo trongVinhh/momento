@@ -22,7 +22,7 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
   const [autoSpeak, setAutoSpeak] = useState(true)
   const [speakingId, setSpeakingId] = useState<string | null>(null)
   const [availableVoices, setAvailableVoices] = useState<Speech.Voice[]>([])
-  const [selectedVoice, setSelectedVoice] = useState<string | null>(null)
+  const [selectedVoice, _setSelectedVoice] = useState<string | null>(null)
   const [showVoiceModal, setShowVoiceModal] = useState(false)
   const [furiganaEnabled, setFuriganaEnabled] = useState(true)
 
@@ -32,6 +32,13 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
   const [translating, setTranslating] = useState(false)
 
   const activeSoundRef = useRef<Audio.Sound | null>(null)
+  const selectedVoiceRef = useRef<string | null>(null)
+  const lastLanguageRef = useRef<string | null>(null)
+
+  const setSelectedVoice = useCallback((voice: string | null) => {
+    _setSelectedVoice(voice)
+    selectedVoiceRef.current = voice
+  }, [])
 
   // Configure audio mode and clean speech on mount/unmount
   useEffect(() => {
@@ -65,18 +72,39 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
     return 'ja-JP'
   }
 
-  const speakBotReply = useCallback((text: string, language: string) => {
+  const speakBotReply = useCallback(async (text: string, language: string) => {
+    const voiceId = selectedVoiceRef.current
+    console.log(`[useBotChat] speakBotReply: text="${text.substring(0, 30)}...", lang="${language}", voice="${voiceId}"`)
+    
+    // Explicitly configure audio session for playback to route through speakers on iOS
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
+      })
+    } catch (err) {
+      console.error('[useBotChat] Error setting audio mode for playback:', err)
+    }
+
     Speech.stop()
     const code = getSpeechLanguageCode(language)
     Speech.speak(text, {
       language: code,
-      voice: selectedVoice || undefined,
+      voice: voiceId || undefined,
       pitch: 1.0,
       rate: 0.95,
-      onDone: () => setSpeakingId(null),
-      onError: () => setSpeakingId(null),
+      onStart: () => console.log('[useBotChat] Speech started playing'),
+      onDone: () => {
+        console.log('[useBotChat] Speech finished playing')
+        setSpeakingId(null)
+      },
+      onError: (err) => {
+        console.error('[useBotChat] Speech error:', err)
+        setSpeakingId(null)
+      },
     })
-  }, [selectedVoice])
+  }, [])
 
   const handleSpeakMessage = (messageId: string, text: string, language: string) => {
     if (speakingId === messageId) {
@@ -175,7 +203,8 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
     const fetchVoices = async () => {
       try {
         const allVoices = await Speech.getAvailableVoicesAsync()
-        const langCode = getSpeechLanguageCode(activeSession?.language || '')
+        const sessionLanguage = activeSession?.language || ''
+        const langCode = getSpeechLanguageCode(sessionLanguage)
         const prefix = langCode.split('-')[0].toLowerCase()
 
         const matching = allVoices.filter((v: any) =>
@@ -183,9 +212,24 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
         )
         setAvailableVoices(matching)
 
-        if (matching.length > 0) {
-          const enhanced = matching.find((v: any) => v.quality === 'Enhanced')
-          setSelectedVoice(enhanced ? enhanced.identifier : matching[0].identifier)
+        // Only set default/enhanced voice if language has changed or if no voice is currently selected
+        if (lastLanguageRef.current !== sessionLanguage || !selectedVoiceRef.current) {
+          if (matching.length > 0) {
+            lastLanguageRef.current = sessionLanguage
+            
+            // Try to find 'Hattori' voice first (case-insensitive)
+            const hattori = matching.find((v: any) => 
+              v.name.toLowerCase().includes('hattori') || 
+              v.identifier.toLowerCase().includes('hattori')
+            )
+            
+            if (hattori) {
+              setSelectedVoice(hattori.identifier)
+            } else {
+              const enhanced = matching.find((v: any) => v.quality === 'Enhanced')
+              setSelectedVoice(enhanced ? enhanced.identifier : matching[0].identifier)
+            }
+          }
         }
       } catch (err) {
         console.error('Error fetching voices:', err)
@@ -195,7 +239,7 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
     if (activeSession) {
       fetchVoices()
     }
-  }, [activeSession])
+  }, [activeSession, setSelectedVoice])
 
   const handleSendMessage = async (textToSend: string) => {
     if (!textToSend.trim() || sending || !activeSession) return
@@ -370,6 +414,13 @@ export function useBotChat(sessionId: string, flatListRef?: React.RefObject<Flat
 
       setSpeakingId(msgId)
       try {
+        // Explicitly configure audio session for playback to route through speakers on iOS
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          playThroughEarpieceAndroid: false,
+        })
+
         const { sound } = await Audio.Sound.createAsync(
           { uri: audioPath },
           { shouldPlay: true }
