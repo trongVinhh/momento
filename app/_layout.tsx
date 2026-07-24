@@ -122,6 +122,12 @@ function RootLayoutContent() {
         <Stack.Screen name="login" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
+          name="bot-chat"
+          options={{
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
           name="destination/[id]"
           options={{
             presentation: 'modal',

@@ -40,3 +40,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Cloudflare Wrangler local environment variables
+*.dev.vars
+.dev.vars

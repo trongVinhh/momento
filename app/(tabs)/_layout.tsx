@@ -3,7 +3,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router'
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Home, User, FileText, Map } from 'lucide-react-native'
+import { Home, User, FileText, Map, MessageCircle } from 'lucide-react-native'
 import { useTheme } from '../../hooks/useTheme'
 
 export default function TabsLayout() {
@@ -17,6 +17,7 @@ export default function TabsLayout() {
     if (pathname === '/feed') return 'feed'
     if (pathname === '/account') return 'account'
     if (pathname === '/map') return 'map'
+    if (pathname === '/bot') return 'bot'
     return 'trips' // Mặc định là trips (pathname === '/' hoặc '/index')
   }
 
@@ -35,6 +36,7 @@ export default function TabsLayout() {
       >
         <Tabs.Screen name="index" />
         <Tabs.Screen name="map" />
+        <Tabs.Screen name="bot" />
         <Tabs.Screen name="feed" />
         <Tabs.Screen name="account" />
       </Tabs>
@@ -51,25 +53,25 @@ export default function TabsLayout() {
         >
           <View style={[styles.navPillInnerBorder, { borderColor: colors.borderGlass }]} />
 
-          {/* Trips (index) — Tab */}
+          {/* Feed — Tab */}
           <TouchableOpacity
             style={styles.navItem}
             activeOpacity={0.7}
-            onPress={() => router.push('/')}
+            onPress={() => router.push('/feed')}
           >
-            <FileText
+            <Home
               size={20}
-              color={activeTab === 'trips' ? colors.textActive : colors.textInactive}
+              color={activeTab === 'feed' ? colors.textActive : colors.textInactive}
             />
             <Text
               style={[
-                activeTab === 'trips'
+                activeTab === 'feed'
                   ? styles.navLabelActive
                   : styles.navLabelInactive,
-                { color: activeTab === 'trips' ? colors.textActive : colors.textInactive }
+                { color: activeTab === 'feed' ? colors.textActive : colors.textInactive }
               ]}
             >
-              Trips
+              Feed
             </Text>
           </TouchableOpacity>
 
@@ -95,25 +97,47 @@ export default function TabsLayout() {
             </Text>
           </TouchableOpacity>
 
-          {/* Feed — Tab */}
+          {/* Trips (index) — Tab */}
           <TouchableOpacity
             style={styles.navItem}
             activeOpacity={0.7}
-            onPress={() => router.push('/feed')}
+            onPress={() => router.push('/')}
           >
-            <Home
+            <FileText
               size={20}
-              color={activeTab === 'feed' ? colors.textActive : colors.textInactive}
+              color={activeTab === 'trips' ? colors.textActive : colors.textInactive}
             />
             <Text
               style={[
-                activeTab === 'feed'
+                activeTab === 'trips'
                   ? styles.navLabelActive
                   : styles.navLabelInactive,
-                { color: activeTab === 'feed' ? colors.textActive : colors.textInactive }
+                { color: activeTab === 'trips' ? colors.textActive : colors.textInactive }
               ]}
             >
-              Feed
+              Trips
+            </Text>
+          </TouchableOpacity>
+
+          {/* Bot — Tab */}
+          <TouchableOpacity
+            style={styles.navItem}
+            activeOpacity={0.7}
+            onPress={() => router.push('/bot')}
+          >
+            <MessageCircle
+              size={20}
+              color={activeTab === 'bot' ? colors.textActive : colors.textInactive}
+            />
+            <Text
+              style={[
+                activeTab === 'bot'
+                  ? styles.navLabelActive
+                  : styles.navLabelInactive,
+                { color: activeTab === 'bot' ? colors.textActive : colors.textInactive }
+              ]}
+            >
+              Bot
             </Text>
           </TouchableOpacity>
 

@@ -46,6 +46,12 @@
       "expo-asset",
       "expo-font",
       "expo-router"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c5f2a937-746e-4722-9c53-3791b1b1fb17"
+    }
   }
 }
