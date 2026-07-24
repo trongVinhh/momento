@@ -12,6 +12,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { BlurView } from 'expo-blur'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -78,6 +79,7 @@ export default function BotSetupScreen() {
 
   // Setup options
   const [selectedLang, setSelectedLang] = useState('Japanese')
+  const [selectedLevel, setSelectedLevel] = useState('Intermediate')
   const [selectedScenario, setSelectedScenario] = useState('free')
   const [customScenario, setCustomScenario] = useState('')
 
@@ -120,13 +122,27 @@ export default function BotSetupScreen() {
     return await response.json()
   }
 
-  // Fetch User and Sessions on mount
+  // Fetch User, Sessions and Language Preference on mount
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserProfile(user)
         fetchSessions(user.id)
+        
+        try {
+          const { data: profile, error: pErr } = await supabase
+            .from('profiles')
+            .select('default_language')
+            .eq('id', user.id)
+            .single()
+          
+          if (profile && profile.default_language) {
+            setSelectedLang(profile.default_language)
+          }
+        } catch (err) {
+          console.error('Error loading default language from database:', err)
+        }
       }
     }
     init()
@@ -147,6 +163,20 @@ export default function BotSetupScreen() {
       console.error('Error fetching sessions:', err)
     } finally {
       setLoadingSessions(false)
+    }
+  }
+
+  const handleLanguageChange = async (langCode: string) => {
+    setSelectedLang(langCode)
+    if (!userProfile) return
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ default_language: langCode })
+        .eq('id', userProfile.id)
+      if (error) throw error
+    } catch (err) {
+      console.error('Error saving default language to database:', err)
     }
   }
 
@@ -177,6 +207,7 @@ export default function BotSetupScreen() {
         .insert({
           user_id: userProfile.id,
           language: selectedLang,
+          level: selectedLevel,
           scenario_title: scenarioTitle,
           scenario_prompt: scenarioPrompt,
         })
@@ -258,11 +289,37 @@ export default function BotSetupScreen() {
                     { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderColor: 'transparent' },
                     selectedLang === lang.code && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: colors.textActive, borderWidth: 1 },
                   ]}
-                  onPress={() => setSelectedLang(lang.code)}
+                  onPress={() => handleLanguageChange(lang.code)}
                 >
                   <Text style={styles.langFlag}>{lang.flag}</Text>
                   <Text style={[styles.langText, { color: colors.textActive }]}>
                     {lang.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Trình độ hàng ngang */}
+          <View style={styles.setupRow}>
+            <Text style={[styles.rowLabel, { color: colors.textSubtle }]}>Trình độ:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langPills}>
+              {[
+                { code: 'Beginner', name: 'Sơ cấp' },
+                { code: 'Intermediate', name: 'Trung cấp' },
+                { code: 'Advanced', name: 'Cao cấp' }
+              ].map(lvl => (
+                <TouchableOpacity
+                  key={lvl.code}
+                  style={[
+                    styles.langPill,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderColor: 'transparent' },
+                    selectedLevel === lvl.code && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: colors.textActive, borderWidth: 1 },
+                  ]}
+                  onPress={() => setSelectedLevel(lvl.code)}
+                >
+                  <Text style={[styles.langText, { color: colors.textActive }]}>
+                    {lvl.name}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -348,10 +405,17 @@ export default function BotSetupScreen() {
                     {sess.language === 'Japanese' ? '🇯🇵' : sess.language === 'English' ? '🇺🇸' : sess.language === 'Korean' ? '🇰🇷' : '🇨🇳'}
                   </Text>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.historyCardTitle, { color: colors.textActive }]} numberOfLines={1}>
-                      {sess.scenario_title}
-                    </Text>
-                    <Text style={[styles.historyCardDate, { color: colors.textMuted }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <Text style={[styles.historyCardTitle, { color: colors.textActive }]} numberOfLines={1}>
+                        {sess.scenario_title}
+                      </Text>
+                      <View style={[styles.levelTag, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderColor: colors.borderGlass, borderWidth: 1 }]}>
+                        <Text style={[styles.levelTagText, { color: colors.textMuted }]}>
+                          {sess.level === 'Beginner' ? 'Sơ cấp' : sess.level === 'Advanced' ? 'Cao cấp' : 'Trung cấp'}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.historyCardDate, { color: colors.textMuted, marginTop: 2 }]}>
                       {new Date(sess.updated_at).toLocaleDateString(locale === 'vi' ? 'vi-VN' : 'en-US')}
                     </Text>
                   </View>
@@ -604,5 +668,15 @@ const styles = StyleSheet.create({
     fontFamily: 'System',
     fontSize: 13,
     fontWeight: '600',
+  },
+  levelTag: {
+    paddingVertical: 1,
+    paddingHorizontal: 5,
+    borderRadius: 6,
+  },
+  levelTagText: {
+    fontFamily: 'System',
+    fontSize: 9,
+    fontWeight: '700',
   },
 })

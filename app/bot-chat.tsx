@@ -69,6 +69,7 @@ export default function BotChatScreen() {
   const [translating, setTranslating] = useState(false)
 
   const flatListRef = useRef<FlatList | null>(null)
+  const activeSoundRef = useRef<Audio.Sound | null>(null)
 
   const callSupabaseFunction = async (body: any) => {
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || ''
@@ -99,10 +100,27 @@ export default function BotChatScreen() {
     return await response.json()
   }
 
-  // Clean speech on unmount
+  // Configure audio mode and clean speech on mount/unmount
   useEffect(() => {
+    const initAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          playThroughEarpieceAndroid: false,
+        })
+      } catch (err) {
+        console.error('Failed to initialize Audio mode:', err)
+      }
+    }
+    initAudio()
+
     return () => {
       Speech.stop()
+      if (activeSoundRef.current) {
+        activeSoundRef.current.stopAsync().catch(() => {})
+        activeSoundRef.current.unloadAsync().catch(() => {})
+      }
     }
   }, [])
 
@@ -172,6 +190,7 @@ export default function BotChatScreen() {
             history: [],
             language: sessionData.language,
             scenario_prompt: sessionData.scenario_prompt,
+            level: sessionData.level,
           })
 
           const { data: insertedMsg, error: insertErr } = await supabase
@@ -262,6 +281,7 @@ export default function BotChatScreen() {
         vietnamese_idea: inputText,
         language: activeSession.language,
         scenario_prompt: activeSession.scenario_prompt,
+        level: activeSession.level,
       })
       setTranslatedText(resJson.translation || '')
       setTranslatedReading(resJson.reading || '')
@@ -270,6 +290,49 @@ export default function BotChatScreen() {
       Alert.alert('Lỗi', `Không thể dịch: ${err.message}`)
     } finally {
       setTranslating(false)
+    }
+  }
+
+  const handlePlayUserAudio = async (msgId: string, audioPath: string) => {
+    if (speakingId === msgId) {
+      if (activeSoundRef.current) {
+        await activeSoundRef.current.stopAsync().catch(() => {})
+        await activeSoundRef.current.unloadAsync().catch(() => {})
+        activeSoundRef.current = null
+      }
+      setSpeakingId(null)
+    } else {
+      Speech.stop()
+      if (activeSoundRef.current) {
+        try {
+          await activeSoundRef.current.stopAsync().catch(() => {})
+          await activeSoundRef.current.unloadAsync().catch(() => {})
+        } catch (_) {}
+        activeSoundRef.current = null
+      }
+
+      setSpeakingId(msgId)
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: audioPath },
+          { shouldPlay: true }
+        )
+        activeSoundRef.current = sound
+        
+        sound.setOnPlaybackStatusUpdate(async (status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            await sound.unloadAsync().catch(() => {})
+            if (activeSoundRef.current === sound) {
+              activeSoundRef.current = null
+            }
+            setSpeakingId(null)
+          }
+        })
+      } catch (err) {
+        console.error('Error playing user voice:', err)
+        Alert.alert('Lỗi', 'Không thể phát lại giọng nói của bạn.')
+        setSpeakingId(null)
+      }
     }
   }
 
@@ -328,6 +391,8 @@ export default function BotChatScreen() {
       await recording.stopAndUnloadAsync()
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
       })
 
       const uri = recording.getURI()
@@ -337,7 +402,7 @@ export default function BotChatScreen() {
         encoding: 'base64',
       })
 
-      await handleSendAudioMessage(base64Audio)
+      await handleSendAudioMessage(base64Audio, uri)
     } catch (err) {
       console.error('Failed to stop recording', err)
       Alert.alert('Lỗi', 'Không thể hoàn thành xử lý file âm thanh.')
@@ -378,6 +443,7 @@ export default function BotChatScreen() {
           history: messages.filter(m => m.id.length > 10),
           language: activeSession.language,
           scenario_prompt: activeSession.scenario_prompt,
+          level: activeSession.level,
         }
       })
 
@@ -414,7 +480,7 @@ export default function BotChatScreen() {
     }
   }
 
-  const handleSendAudioMessage = async (base64Audio: string) => {
+  const handleSendAudioMessage = async (base64Audio: string, localUri: string) => {
     if (sending || !activeSession) return
 
     setSending(true)
@@ -432,6 +498,21 @@ export default function BotChatScreen() {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token || ''
 
+      // Save audio to permanent local file
+      let finalAudioPath = ''
+      try {
+        const dir = `${FileSystem.documentDirectory}recordings`
+        const dirInfo = await FileSystem.getInfoAsync(dir)
+        if (!dirInfo.exists) {
+          await FileSystem.makeDirectoryAsync(dir, { intermediates: true })
+        }
+        const permanentUri = `${dir}/${Date.now()}.m4a`
+        await FileSystem.copyAsync({ from: localUri, to: permanentUri })
+        finalAudioPath = permanentUri
+      } catch (fileErr) {
+        console.error('Failed to copy voice recording file:', fileErr)
+      }
+
       // Call Supabase Function Proxy
       const { data: resJson, error: fnErr } = await supabase.functions.invoke('momento-ai-proxy', {
         body: {
@@ -440,6 +521,7 @@ export default function BotChatScreen() {
           history: messages.filter(m => m.id.length > 10),
           language: activeSession.language,
           scenario_prompt: activeSession.scenario_prompt,
+          level: activeSession.level,
         }
       })
 
@@ -451,6 +533,7 @@ export default function BotChatScreen() {
         session_id: activeSession.id,
         sender: 'user',
         content: userText,
+        audio_path: finalAudioPath || null,
       })
       if (userMsgErr) throw userMsgErr
 
@@ -577,15 +660,31 @@ export default function BotChatScreen() {
             </View>
           )}
 
-          {/* User specific features: Grammar warnings */}
-          {!isBot && hasCorrection && (
-            <TouchableOpacity
-              style={styles.correctionBadge}
-              onPress={() => setSelectedCorrection(item.grammar_correction)}
-            >
-              <AlertCircle size={12} color="#ffffff" style={{ marginRight: 4 }} />
-              <Text style={styles.correctionBadgeText}>📝 Sửa ngữ pháp</Text>
-            </TouchableOpacity>
+          {/* User specific features: Grammar warnings or audio playback */}
+          {!isBot && (hasCorrection || item.audio_path) && (
+            <View style={styles.botAddonsRow}>
+              {item.audio_path && (
+                <TouchableOpacity
+                  style={styles.addonActionBtn}
+                  onPress={() => handlePlayUserAudio(item.id, item.audio_path)}
+                >
+                  <Volume2 size={12} color={speakingId === item.id ? (isDark ? '#38bdf8' : '#0284c7') : colors.textInactive} />
+                  <Text style={[styles.addonActionText, { color: speakingId === item.id ? (isDark ? '#38bdf8' : '#0284c7') : colors.textInactive }]}>
+                    {speakingId === item.id ? 'Dừng phát' : 'Nghe lại'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {hasCorrection && (
+                <TouchableOpacity
+                  style={styles.addonActionBtn}
+                  onPress={() => setSelectedCorrection(item.grammar_correction)}
+                >
+                  <AlertCircle size={12} color={isDark ? '#f43f5e' : '#e11d48'} />
+                  <Text style={[styles.addonActionText, { color: isDark ? '#f43f5e' : '#e11d48' }]}>Sửa ngữ pháp</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
         </View>
       </View>

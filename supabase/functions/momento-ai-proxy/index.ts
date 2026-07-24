@@ -37,7 +37,7 @@ serve(async (req) => {
     }
 
     const reqBody = await req.json()
-    const { action, vietnamese_idea, message, audio, audioMimeType, history, language, scenario_prompt } = reqBody
+    const { action, vietnamese_idea, message, audio, audioMimeType, history, language, scenario_prompt, level } = reqBody
 
     if (action === 'translate_idea') {
       const targetLang = language || "Japanese"
@@ -99,15 +99,31 @@ You MUST respond strictly in the following JSON format:
     }
 
     const targetLang = language || "Japanese"
-    const systemPrompt = `You are an expert language teacher and conversation partner. Your goal is to help the user practice their conversation (Kaiwa) skills in ${targetLang}.
+    const chosenLevel = level || "Intermediate"
+    
+    let levelGuideline = ""
+    if (chosenLevel === "Beginner") {
+      levelGuideline = `- Use very simple, basic vocabulary and grammar (e.g., equivalent to N5-N4 level for Japanese). Keep sentences short and use simple sentence structures.`
+    } else if (chosenLevel === "Advanced") {
+      levelGuideline = `- Use advanced, native-level vocabulary, expressions, and grammar (e.g., equivalent to N2-N1 level for Japanese).`
+    } else {
+      levelGuideline = `- Use standard, daily conversational vocabulary and grammar (e.g., equivalent to N3 level for Japanese).`
+    }
+
+    const systemPrompt = `You are an expert language teacher and conversation partner. Your goal is to help the user practice their conversation (Kaiwa) skills in ${targetLang} at the ${chosenLevel} level.
 First, read the user's custom context/scenario: "${scenario_prompt || 'Free conversation. Speak naturally.'}".
 You must act as the character/role defined in this scenario. Respond naturally in ${targetLang} as that character.
 Second, analyze the user's message. Note: The user may send a text message or an audio file. If they send an audio file, transcribe it exactly in ${targetLang} and set the "user_transcription" field to this transcription. If they send a text message, set "user_transcription" to null.
 Analyze the user's input (either the text message or the transcription of their audio):
 1. Check if the user's message/transcription has any grammatical errors, spelling mistakes, or unnatural phrasing in ${targetLang}. If so, provide a corrected version and a concise explanation in Vietnamese. If it's perfect, set grammar_correction to null.
-2. Formulate your reply in ${targetLang} as your character. Keep it conversational, friendly, and relatively short (1-3 sentences) to maintain a natural messaging flow.
+2. Formulate your reply in ${targetLang} as your character. 
+   - You MUST use natural, everyday colloquial spoken language.
+   - AVOID overly formal, bookish, or academic textbook phrasing.
+   - Use warm, friendly, and authentic expressions that native speakers actually use in daily real-life conversations.
+   ${levelGuideline}
+   - Keep it relatively short (1-3 sentences) to maintain a natural messaging flow.
 3. Translate your reply into Vietnamese.
-4. Suggest 2-3 distinct, natural options of what the user can reply next in ${targetLang}. These options should help them continue the conversation and practice different expressions.
+4. Suggest 2-3 distinct, natural options of what the user can reply next in ${targetLang}. These options must also use everyday colloquial phrasing, making them extremely useful for practicing daily-life conversations.
 5. If targetLang is Japanese, segment your reply into characters/words and map them to their corresponding Hiragana readings in the "furigana" array field. Each item must have a "text" (Kanji/Kana/punctuation) and a "ruby" (Hiragana pronunciation for Kanji, or null if it's already Hiragana/Katakana or punctuation). For example, if reply is "日本語を学びます", furigana should be: [{"text": "日", "ruby": "に"}, {"text": "本", "ruby": "ほん"}, {"text": "語", "ruby": "ご"}, {"text": "を", "ruby": null}, {"text": "学", "ruby": "まな"}, {"text": "び", "ruby": null}, {"text": "ま", "ruby": null}, {"text": "す", "ruby": null}]. If targetLang is not Japanese, set the "furigana" array to null.
 
 You MUST respond strictly in the following JSON format:
