@@ -16,11 +16,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { Camera, Check, Trash2, ArrowLeft, MapPin, Type, X, Plus } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { GLASS_STYLES, COLORS } from '../../constants/theme'
-import { useTheme } from '../../hooks/useTheme'
-import { useEditMoment } from '../../hooks/useEditMoment'
-import { globalStyles } from '../../styles/globalStyles'
-import { useTranslation } from '../../context/LanguageContext'
+import { GLASS_STYLES, COLORS } from '../../../constants/theme'
+import { useTheme } from '../../../hooks/useTheme'
+import { useEditMoment } from '../../../hooks/useMoments'
+import { globalStyles } from '../../../styles/globalStyles'
+import { useTranslation } from '../../../context/LanguageContext'
 
 export default function EditMomentScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -194,7 +194,7 @@ export default function EditMomentScreen() {
                         marginRight: 4,
                       }
                     ]}
-                    onPress={() => router.push('/create-destination')}
+                    onPress={() => router.push('/destination/create')}
                   >
                     <Plus size={13} color={colors.textMuted} style={{ marginRight: 2 }} />
                     <Text style={[styles.destPillText, { color: colors.textMuted, fontWeight: '500' }]}>
@@ -309,8 +309,6 @@ export default function EditMomentScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-
-
             </View>
           </View>
         </ScrollView>
@@ -475,18 +473,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
-  destPillActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
   destPillText: {
     fontFamily: 'System',
     fontSize: 12,
     color: COLORS.textInactive,
-  },
-  destPillTextActive: {
-    color: COLORS.white,
-    fontWeight: '600',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -551,20 +541,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: COLORS.white,
-  },
-  deleteBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    borderRadius: 12,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.25)',
-  },
-  deleteBtnText: {
-    fontFamily: 'System',
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#ef4444',
   },
 })

@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BlurView } from 'expo-blur'
 
 import { globalStyles } from '../../styles/globalStyles'
-import { useDestinationDetail } from '../../hooks/useDestinationDetail'
+import { useDestinationDetail } from '../../hooks/useDestinations'
 import { useTheme } from '../../hooks/useTheme'
 import { parseImageUrls } from '../../utils/imageParser'
 import { useTranslation } from '../../context/LanguageContext'
@@ -83,7 +83,7 @@ export default function DestinationDetail() {
                 overflow: 'hidden',
               }
             ]}
-            onPress={() => router.push({ pathname: '/create', params: { destId: destination.id } })}
+            onPress={() => router.push({ pathname: '/moment/create', params: { destId: destination.id } })}
           >
             <BlurView
               intensity={Platform.OS === 'android' ? 20 : 35}
@@ -98,7 +98,7 @@ export default function DestinationDetail() {
           {/* Nút sửa địa điểm */}
           <TouchableOpacity
             style={styles.glassRoundBtn}
-            onPress={() => router.push(`/edit-destination/${destination.id}`)}
+            onPress={() => router.push(`/destination/edit/${destination.id}`)}
           >
             <Settings size={18} color="#ffffff" />
           </TouchableOpacity>
@@ -148,7 +148,7 @@ export default function DestinationDetail() {
                     overflow: 'hidden',
                   }
                 ]}
-                onPress={() => router.push({ pathname: '/create', params: { destId: destination.id } })}
+                onPress={() => router.push({ pathname: '/moment/create', params: { destId: destination.id } })}
               >
                 <BlurView
                   intensity={Platform.OS === 'android' ? 20 : 35}

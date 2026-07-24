@@ -15,7 +15,7 @@ import { Heart, MessageCircle, Share2, Compass, FileText } from 'lucide-react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { globalStyles } from '../../styles/globalStyles'
-import { useFeed } from '../../hooks/useFeed'
+import { useFeed } from '../../hooks/useMoments'
 import { useTheme } from '../../hooks/useTheme'
 import { parseImageUrls } from '../../utils/imageParser'
 import { useTranslation } from '../../context/LanguageContext'

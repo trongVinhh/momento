@@ -111,7 +111,7 @@ export default function TripsTab() {
                 }
               ]}
               activeOpacity={0.8}
-              onPress={() => router.push('/create-destination')}
+              onPress={() => router.push('/destination/create')}
             >
               <BlurView
                 intensity={Platform.OS === 'android' ? 20 : 35}
@@ -166,7 +166,7 @@ export default function TripsTab() {
           
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push('/create-destination')}
+            onPress={() => router.push('/destination/create')}
             style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}
           >
             <Plus size={20} color={colors.textActive} />

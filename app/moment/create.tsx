@@ -17,11 +17,11 @@ import { StatusBar } from 'expo-status-bar'
 import { Camera, MapPin, Type, Send, ArrowLeft, Plus, X } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useCreateMoment } from '../hooks/useCreateMoment'
-import { COLORS, GLASS_STYLES } from '../constants/theme'
-import { useTheme } from '../hooks/useTheme'
-import { globalStyles } from '../styles/globalStyles'
-import { useTranslation } from '../context/LanguageContext'
+import { useCreateMoment } from '../../hooks/useMoments'
+import { COLORS, GLASS_STYLES } from '../../constants/theme'
+import { useTheme } from '../../hooks/useTheme'
+import { globalStyles } from '../../styles/globalStyles'
+import { useTranslation } from '../../context/LanguageContext'
 
 export default function CreateMomentScreen() {
   const insets = useSafeAreaInsets()
@@ -168,7 +168,7 @@ export default function CreateMomentScreen() {
               ) : destinations.length === 0 ? (
                 <TouchableOpacity
                   style={[styles.noDestBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.04)', borderColor: colors.borderGlass }]}
-                  onPress={() => router.push('/create-destination')}
+                  onPress={() => router.push('/destination/create')}
                 >
                   <Plus size={16} color={colors.textInactive} />
                   <Text style={[styles.noDestText, { color: colors.textInactive }]}>
@@ -192,7 +192,7 @@ export default function CreateMomentScreen() {
                         marginRight: 4,
                       }
                     ]}
-                    onPress={() => router.push('/create-destination')}
+                    onPress={() => router.push('/destination/create')}
                   >
                     <Plus size={13} color={colors.textMuted} style={{ marginRight: 2 }} />
                     <Text style={[styles.destPillText, { color: colors.textMuted, fontWeight: '500' }]}>
@@ -430,23 +430,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     paddingLeft: 2,
   },
-  addDestBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.25)',
-  },
-  addDestBtnText: {
-    fontFamily: 'System',
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#3b82f6',
-  },
   destLoading: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -514,18 +497,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
-  destPillActive: {
-    backgroundColor: '#3b82f6',
-    borderColor: '#3b82f6',
-  },
   destPillText: {
     fontFamily: 'System',
     fontSize: 12,
     color: COLORS.textInactive,
-  },
-  destPillTextActive: {
-    color: COLORS.white,
-    fontWeight: '600',
   },
   textArea: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',

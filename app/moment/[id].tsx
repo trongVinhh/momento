@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { globalStyles } from '../../styles/globalStyles'
 import { useTheme } from '../../hooks/useTheme'
-import { useMomentDetail } from '../../hooks/useMomentDetail'
+import { useMomentDetail } from '../../hooks/useMoments'
 import { parseImageUrls } from '../../utils/imageParser'
 import { GLASS_STYLES } from '../../constants/theme'
 import { supabase } from '../../lib/supabase'
@@ -106,8 +106,7 @@ export default function MomentDetailScreen() {
         <Text style={[styles.headerTitle, { color: colors.textActive }]}>{t('momentDetailTitle')}</Text>
         <View style={styles.headerRightActions}>
           <TouchableOpacity 
-            style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]} 
-            onPress={() => router.push(`/edit-moment/${moment.id}`)}
+            style={[styles.glassRoundBtn, { backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderColor: colors.borderGlass }]}             onPress={() => router.push(`/moment/edit/${moment.id}`)}
           >
             <Edit3 size={18} color={colors.textActive} />
           </TouchableOpacity>

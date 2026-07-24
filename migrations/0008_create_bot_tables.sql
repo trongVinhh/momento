@@ -76,3 +76,13 @@ CREATE POLICY "Allow users to delete messages in their own sessions"
       AND public.bot_sessions.user_id = auth.uid()
     )
   );
+
+CREATE POLICY "Allow users to update messages in their own sessions"
+  ON public.bot_messages FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.bot_sessions
+      WHERE public.bot_sessions.id = public.bot_messages.session_id
+      AND public.bot_sessions.user_id = auth.uid()
+    )
+  );
